@@ -14,10 +14,10 @@ namespace GHPlugin
         public int StartJointIndex;
         public int EndJointIndex;
         public Point3d MiddlePoint;
-        public Boolean Known = false;
+        public Line ForceLine;
         public Double Force = 0.0;
         public Boolean PositiveForce = true;
-        public Line ForceLine;
+        public Boolean Known = false;
 
         public Member(int startJointIndex, int endJointIndex, List<Point3d> joints)
         {
@@ -26,6 +26,5 @@ namespace GHPlugin
             MiddlePoint = (joints[startJointIndex] + joints[endJointIndex]) / 2.0;
             MemberLine = new Line(joints[startJointIndex], joints[endJointIndex]);
         }
-
     }
 }

@@ -39,6 +39,7 @@ namespace GHPlugin
             List<Point3d> myPoints = GlobalJoints;
             List<int> startIntegers = new List<int>() { 0, 0, 1 };
             List<int> endIntegers = new List<int>() { 1, 2, 2 };
+
             List<Member> globalMembers = new List<Member>();
 
             for (int i = 0; i < startIntegers.Count; i++)
@@ -46,6 +47,25 @@ namespace GHPlugin
                 globalMembers.Add(new Member(startIntegers[i], endIntegers[i], GlobalJoints));
             }
             return globalMembers;
+        }
+
+        public List<Member> SolveForceDiagram(List<Member> memberList)
+        {
+            List<Point3d> myPoints = GlobalJoints;
+            List<Joint> myJoints = new List<Joint>();
+            for (int i = 0; i < myPoints.Count; i++)
+            {
+                myJoints.Add(new Joint(GlobalJoints[i]));
+            }
+            List<Member> myMembers = new List<Member>();
+            for(int i = 0; i<myJoints.Count; i++)
+            {
+                //for (int j = 0; j < memberList.Count; j++)
+                //    if (i == memberList[j].StartJointIndex)
+                    
+            }
+
+            return myMembers;
         }
     }
 }
