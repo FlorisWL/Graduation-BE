@@ -56,9 +56,16 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="ExternalForce.cs" />
+    <Compile Include="GhcCreateExternalForce.cs" />
+    <Compile Include="GhcCreateSupportReaction.cs" />
+    <Compile Include="GhcSolveGlobalForces.cs" />
+    <Compile Include="Joint.cs" />
     <Compile Include="Member.cs" />
+    <Compile Include="Resultant.cs" />
+    <Compile Include="SupportReaction.cs" />
     <Compile Include="Try outs\GhcCreatePyramid.cs" />
-    <Compile Include="Try outs\GhcCreateMember.cs" />
+    <Compile Include="GhcCreateMember.cs" />
     <Compile Include="Try outs\Pyramid.cs" />
     <Compile Include="Try outs\GhcAverage.cs" />
     <Compile Include="Try outs\GhcCentroid.cs" />
@@ -71,9 +78,6 @@
       <DesignTime>True</DesignTime>
       <DependentUpon>Resources.resx</DependentUpon>
     </Compile>
-    <Compile Include="Old\Tree.cs" />
-    <Compile Include="Old\TreeNode.cs" />
-    <Compile Include="Old\TreeProgram.cs" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Properties\Resources.resx">
@@ -92,6 +96,9 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\movingparticle_icon.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Old\" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
