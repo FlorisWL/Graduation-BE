@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Collections.Generic;
+using System.Drawing.Printing;
 using System.Windows.Forms.VisualStyles;
 using Grasshopper.Kernel;
 using Rhino.Geometry;
@@ -84,6 +86,7 @@ namespace GHPlugin
             List<Joint> myJoints = new List<Joint>();
             List<ExternalForce> myExternalForces = new List<ExternalForce>();
             List<SupportReaction> mySupportReactions = new List<SupportReaction>();
+            List<Member> myGlobalMembers = new List<Member>();
 
             Vector3d zPostive = new Vector3d(0, 0, 1);
             Vector3d yPositive = new Vector3d(0, 1, 0);
@@ -123,11 +126,20 @@ namespace GHPlugin
             }
 
             Point3d startPoint = iStartForceDiagram;
-
             Resultant myResultant = new Resultant(iStartForceDiagram, myExternalForces);
             oResultantLineForce = myResultant.ResultantForce;
+            oResultantLineForm = myResultant.ResultantForm;
             oExtForceLinesForce = myResultant.ForceLinesForce;
 
+            GlobalDiagram myGlobalDiagram = new GlobalDiagram(myResultant, mySupportReactions);
+            List<Member> oVirtMembers = myGlobalDiagram.Members();
+
+            for (int i = 0; i < oVirtMembers.Count; i++)
+                oVirtMemberLinesForm.Add(oVirtMembers[i].MemberLine);
+
+
+                //for (int i = 0; i < mySupportReactions.Count; i++)
+                //    oSupportLinesForce.Add(mySupportReactions[i].ForceLine);
 
             DA.SetDataList(0, oSupportLinesForm);
             DA.SetDataList(1, oExtForceLinesForm);
