@@ -57,13 +57,16 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="ExternalForce.cs" />
+    <Compile Include="Functions.cs" />
     <Compile Include="GhcCreateExternalForce.cs" />
     <Compile Include="GhcCreateSupportReaction.cs" />
     <Compile Include="GhcSolveGlobalForces.cs" />
     <Compile Include="GlobalDiagram.cs" />
+    <Compile Include="HalfMember.cs" />
     <Compile Include="Joint.cs" />
     <Compile Include="Member.cs" />
     <Compile Include="Resultant.cs" />
+    <Compile Include="ResultantSimple.cs" />
     <Compile Include="SupportReaction.cs" />
     <Compile Include="Try outs\GhcCreatePyramid.cs" />
     <Compile Include="GhcCreateMember.cs" />

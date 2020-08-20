@@ -14,6 +14,7 @@ namespace GHPlugin
         public List<ExternalForce> ExternalForces;
         public List<Line> ForceLinesForce;
         public Line ResultantForce;
+        public Point3d PointForm;
         public Line ResultantForm;
 
 
@@ -37,6 +38,7 @@ namespace GHPlugin
             Vector3d arbitraryVector = externalForces[0].ForceVector;
             arbitraryVector.Rotate(1.5, zPostive);
             Point3d arbitraryPoint = startPoint + arbitraryVector;
+            PointForm = arbitraryPoint;
             Vector3d resultantVector = ResultantForce.Direction;
 
             List<Line> globalForceLines2 = new List<Line>();

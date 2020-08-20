@@ -9,16 +9,17 @@ namespace GHPlugin
 {
     class GlobalDiagram
     {
-        Resultant ForceResultant;
-        List<SupportReaction> AllSupportReactions;
-        List<Line> MemberLinesForm = new List<Line>();
-        List<Line> MemberLinesForce = new List<Line>();
-        List<Point3d> GlobalJoints = new List<Point3d>();
+        public Resultant ForceResultant;
+        public List<SupportReaction> AllSupportReactions;
+        public List<Line> MemberLinesForm = new List<Line>();
+        public List<Line> MemberLinesForce = new List<Line>();
+        public List<Point3d> GlobalJoints = new List<Point3d>();
 
         public GlobalDiagram(Resultant forceResultant, List<SupportReaction> allSupportReactions)
         {
             ForceResultant = forceResultant;
             AllSupportReactions = allSupportReactions;
+            List<Point3d> globalJoints = new List<Point3d>();
 
             Point3d topPoint = forceResultant.ResultantForm.To;
             Point3d supportPoint0 = allSupportReactions[0].FormLine.To;
@@ -28,15 +29,15 @@ namespace GHPlugin
                 supportPoint1 = allSupportReactions[2].FormLine.To;
             else
                 supportPoint1 = allSupportReactions[1].FormLine.To;
-            
-            GlobalJoints.Add(topPoint);
-            GlobalJoints.Add(supportPoint0);
-            GlobalJoints.Add(supportPoint1);
+
+            globalJoints.Add(topPoint);
+            globalJoints.Add(supportPoint0);
+            globalJoints.Add(supportPoint1);
+            GlobalJoints = globalJoints;
         }
 
         public List<Member> Members()
         {
-            List<Point3d> myPoints = GlobalJoints;
             List<int> startIntegers = new List<int>() { 0, 0, 1 };
             List<int> endIntegers = new List<int>() { 1, 2, 2 };
 
@@ -49,23 +50,127 @@ namespace GHPlugin
             return globalMembers;
         }
 
-        public List<Member> SolveForceDiagram(List<Member> memberList)
+        
+
+        public void SolveForceDiagram(List<Member> globalMembers)
         {
-            List<Point3d> myPoints = GlobalJoints;
+            Functions functions = new Functions();
             List<Joint> myJoints = new List<Joint>();
-            for (int i = 0; i < myPoints.Count; i++)
+            for (int i = 0; i < GlobalJoints.Count; i++)
             {
                 myJoints.Add(new Joint(GlobalJoints[i]));
             }
-            List<Member> myMembers = new List<Member>();
-            for(int i = 0; i<myJoints.Count; i++)
+
+            List<HalfMember> myHalfMembers = new List<HalfMember>();
+            for (int i = 0; i < globalMembers.Count; i++)
             {
-                //for (int j = 0; j < memberList.Count; j++)
-                //    if (i == memberList[j].StartJointIndex)
-                    
+                myHalfMembers.Add(new HalfMember(i, globalMembers[i], true, GlobalJoints));
+                myHalfMembers.Add(new HalfMember(i, globalMembers[i], false, GlobalJoints));
             }
 
-            return myMembers;
+            List<Member> returnMembers = globalMembers;
+
+            int unknowns;
+            int knowns;
+            List<int> halfMemberIndices;
+            List<int> correspondingHalfMemberIndices;
+            List<int> supportIndices;
+            List<int> correspondingSupportIndices;
+            Boolean forceApplied;
+            List<Line> unknownForceLines;
+            List<Line> knownForceLines;
+            Line knownForceLine;
+            List<double> myAngles;
+            List<Vector3d> myUnkownVectors;
+            List<Boolean> myPostiveForces;
+
+            for (int i = 0; i < myJoints.Count; i++)
+            {
+                unknowns = 0;
+                knowns = 0;
+                halfMemberIndices = new List<int>();  //Indices of myHalfMembers in unknownForceLines
+                correspondingHalfMemberIndices = new List<int>();  //corresponding indices in myHalfMembers
+                supportIndices = new List<int>();
+                correspondingSupportIndices = new List<int>();
+                forceApplied = false;
+                unknownForceLines = new List<Line>();
+                knownForceLines = new List<Line>();
+
+                for (int j = 0; j < myHalfMembers.Count; j++)
+                    if (i == myHalfMembers[j].JointIndex)
+                    {
+                        if (globalMembers[myHalfMembers[j].MemberIndex].Known == false)
+                        {
+                            unknowns += 1;
+                            halfMemberIndices.Add(unknownForceLines.Count);
+                            correspondingHalfMemberIndices.Add(j);
+                            unknownForceLines.Add(myHalfMembers[j].HalfMemberLine);
+                        }
+                        else
+                        {
+                            knowns += 1;
+                            knownForceLines.Add(globalMembers[myHalfMembers[j].MemberIndex].ForceLine);
+                        }
+                    }
+
+                for (int j = 0; j < AllSupportReactions.Count; j++)
+                    if (GlobalJoints[i].DistanceToSquared(AllSupportReactions[j].Joint) < 0.00001)
+                    {
+                        if (AllSupportReactions[j].Known == false)
+                        {
+                            unknowns += 1;
+                            supportIndices.Add(unknownForceLines.Count);
+                            correspondingSupportIndices.Add(j);
+                            unknownForceLines.Add(AllSupportReactions[j].FormLine);
+                        }
+                        else
+                        {
+                            knowns += 1;
+                            knownForceLines.Add(AllSupportReactions[i].ForceLine);
+                        }
+                    }
+
+                if (GlobalJoints[i].DistanceToSquared(ForceResultant.ResultantForm.To) < 0.00001)
+                {
+                    forceApplied = true;
+                    knowns += 1;
+                    knownForceLines.Add(ForceResultant.ResultantForce);
+                }
+
+                if ((unknowns < 3) && (unknowns > 0))
+                {
+                    if (knowns > 1)
+                    {
+                        ResultantSimple myResultantSimple = new ResultantSimple(knownForceLines[0].From, knownForceLines);
+                        knownForceLine = myResultantSimple.ResultantLine;
+                    }
+                    else
+                        knownForceLine = knownForceLines[0];
+
+                    myJoints[i].FindAngles(knownForceLine, unknownForceLines, out myAngles, out myUnkownVectors);
+                    functions.ThreeForceJoint(myAngles, knownForceLine, myUnkownVectors, out unknownForceLines, out myPostiveForces);
+
+                    for (int j = 0; j < halfMemberIndices.Count; j++)
+                    {
+                        globalMembers[myHalfMembers[correspondingHalfMemberIndices[j]].MemberIndex].ForceLine = unknownForceLines[halfMemberIndices[j]];
+                        globalMembers[myHalfMembers[correspondingHalfMemberIndices[j]].MemberIndex].Force = unknownForceLines[halfMemberIndices[j]].Length;
+                        globalMembers[myHalfMembers[correspondingHalfMemberIndices[j]].MemberIndex].PositiveForce = myPostiveForces[halfMemberIndices[j]];
+                        globalMembers[myHalfMembers[correspondingHalfMemberIndices[j]].MemberIndex].Known = true;
+                    }
+
+                    for (int j = 0; j < supportIndices.Count; j++)
+                    {
+                        AllSupportReactions[correspondingSupportIndices[j]].ForceLine = unknownForceLines[supportIndices[j]];
+                        AllSupportReactions[correspondingSupportIndices[j]].Force = unknownForceLines[supportIndices[j]].Length;
+                        AllSupportReactions[correspondingSupportIndices[j]].PositiveForce = myPostiveForces[supportIndices[j]];
+                        AllSupportReactions[correspondingSupportIndices[j]].Known = true;
+                    }
+
+                    return;
+
+                }
+
+            }
         }
     }
 }

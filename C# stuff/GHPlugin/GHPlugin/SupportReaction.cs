@@ -11,6 +11,7 @@ namespace GHPlugin
     public class SupportReaction
     {
         public int JointIndex;
+        public Point3d Joint;
         public Vector3d Direction;
         public Line FormLine;
         public Line ForceLine;
@@ -21,6 +22,7 @@ namespace GHPlugin
         public SupportReaction(int jointIndex, List<Point3d> joints, Vector3d supportVector)
         {
             JointIndex = jointIndex;
+            Joint = joints[jointIndex];
             supportVector.Unitize();
             Direction = supportVector;
             supportVector.Reverse();
