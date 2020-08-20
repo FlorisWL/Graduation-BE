@@ -48,9 +48,9 @@ namespace GHPlugin
             for (int i = 0; i < OtherForceLines.Count; i++)
             {
                 if (Vector3d.Multiply(OtherForceLines[i].Direction, otherVectors[i]) > 0.0)
-                    myPositiveForce.Add(true);
-                else
                     myPositiveForce.Add(false);
+                else
+                    myPositiveForce.Add(true);
             }
             positiveForce = myPositiveForce;
 

@@ -79,6 +79,7 @@ namespace GHPlugin
             Boolean forceApplied;
             List<Line> unknownForceLines;
             List<Line> knownForceLines;
+            List<Line> knownForceLinesForAngles;
             Line knownForceLine;
             List<double> myAngles;
             List<Vector3d> myUnkownVectors;
@@ -95,6 +96,9 @@ namespace GHPlugin
                 forceApplied = false;
                 unknownForceLines = new List<Line>();
                 knownForceLines = new List<Line>();
+                knownForceLinesForAngles = new List<Line>();
+                Line knownForceLineForAngle;
+                Line forceLineTemp;
 
                 for (int j = 0; j < myHalfMembers.Count; j++)
                     if (i == myHalfMembers[j].JointIndex)
@@ -109,7 +113,20 @@ namespace GHPlugin
                         else
                         {
                             knowns += 1;
-                            knownForceLines.Add(globalMembers[myHalfMembers[j].MemberIndex].ForceLine);
+                            forceLineTemp = globalMembers[myHalfMembers[j].MemberIndex].ForceLine;
+
+                            if (Vector3d.Multiply(forceLineTemp.Direction, myHalfMembers[j].HalfMemberLine.Direction) > 0.0)
+                            {
+                                if (globalMembers[myHalfMembers[j].MemberIndex].PositiveForce == true)
+                                    forceLineTemp.Flip();
+                            }
+                            else
+                            {
+                                if (globalMembers[myHalfMembers[j].MemberIndex].PositiveForce == false)
+                                    forceLineTemp.Flip();
+                            }
+                            knownForceLines.Add(forceLineTemp);
+                            knownForceLinesForAngles.Add(myHalfMembers[j].HalfMemberLine);
                         }
                     }
 
@@ -127,6 +144,7 @@ namespace GHPlugin
                         {
                             knowns += 1;
                             knownForceLines.Add(AllSupportReactions[i].ForceLine);
+                            knownForceLinesForAngles.Add(AllSupportReactions[i].ForceLine);
                         }
                     }
 
@@ -135,6 +153,7 @@ namespace GHPlugin
                     forceApplied = true;
                     knowns += 1;
                     knownForceLines.Add(ForceResultant.ResultantForce);
+                    knownForceLinesForAngles.Add(ForceResultant.ResultantForce);
                 }
 
                 if ((unknowns < 3) && (unknowns > 0))
@@ -143,11 +162,13 @@ namespace GHPlugin
                     {
                         ResultantSimple myResultantSimple = new ResultantSimple(knownForceLines[0].From, knownForceLines);
                         knownForceLine = myResultantSimple.ResultantLine;
+                        
                     }
                     else
                         knownForceLine = knownForceLines[0];
 
-                    myJoints[i].FindAngles(knownForceLine, unknownForceLines, out myAngles, out myUnkownVectors);
+                    knownForceLineForAngle = knownForceLinesForAngles[0];
+                    myJoints[i].FindAngles(knownForceLineForAngle, unknownForceLines, out myAngles, out myUnkownVectors);
                     functions.ThreeForceJoint(myAngles, knownForceLine, myUnkownVectors, out unknownForceLines, out myPostiveForces);
 
                     for (int j = 0; j < halfMemberIndices.Count; j++)

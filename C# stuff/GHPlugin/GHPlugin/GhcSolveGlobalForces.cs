@@ -142,13 +142,13 @@ namespace GHPlugin
             for (int i = 0; i < myGlobalDiagram.GlobalJoints.Count ; i++)
             {
                 myGlobalDiagram.SolveForceDiagram(oVirtMembers);
-
-                for (int j = 0; j < mySupportReactions.Count; j++)
-                    oSupportLinesForce.Add(mySupportReactions[j].ForceLine);
-
-                for (int j = 0; j < oVirtMembers.Count; j++)
-                    oVirtMemberLinesForce.Add(oVirtMembers[j].ForceLine);
             }
+
+            for (int j = 0; j < mySupportReactions.Count; j++)
+                oSupportLinesForce.Add(mySupportReactions[j].ForceLine);
+
+            for (int j = 0; j < oVirtMembers.Count; j++)
+                oVirtMemberLinesForce.Add(oVirtMembers[j].ForceLine);
 
             DA.SetDataList(0, oSupportLinesForm);
             DA.SetDataList(1, oExtForceLinesForm);
