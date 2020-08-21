@@ -7,13 +7,14 @@ using System.Threading.Tasks;
 
 namespace GHPlugin
 {
-    class GlobalDiagram
+    public class GlobalDiagram
     {
         public Resultant ForceResultant;
         public List<SupportReaction> AllSupportReactions;
         public List<Line> MemberLinesForm = new List<Line>();
         public List<Line> MemberLinesForce = new List<Line>();
         public List<Point3d> GlobalJoints = new List<Point3d>();
+        public Point3d dummyPoint = new Point3d(0,0,0);
 
         public GlobalDiagram(Resultant forceResultant, List<SupportReaction> allSupportReactions)
         {
@@ -46,7 +47,9 @@ namespace GHPlugin
             for (int i = 0; i < startIntegers.Count; i++)
             {
                 globalMembers.Add(new Member(startIntegers[i], endIntegers[i], GlobalJoints));
+                MemberLinesForm.Add(globalMembers[i].MemberLine);
             }
+
             return globalMembers;
         }
 
@@ -84,6 +87,7 @@ namespace GHPlugin
             List<double> myAngles;
             List<Vector3d> myUnkownVectors;
             List<Boolean> myPostiveForces;
+            Point3d myMiddlePoint;
 
             for (int i = 0; i < myJoints.Count; i++)
             {
@@ -153,14 +157,15 @@ namespace GHPlugin
                     forceApplied = true;
                     knowns += 1;
                     knownForceLines.Add(ForceResultant.ResultantForce);
-                    knownForceLinesForAngles.Add(ForceResultant.ResultantForce);
+                    knownForceLinesForAngles.Add(ForceResultant.ResultantForceForAngle);
                 }
 
                 if ((unknowns < 3) && (unknowns > 0))
                 {
                     if (knowns > 1)
                     {
-                        ResultantSimple myResultantSimple = new ResultantSimple(knownForceLines[0].From, knownForceLines);
+                        //startpoint (here dummypoint) for ResultantSimple gets overruled if knownForceLines.Count == 2, which should be the case here.
+                        ResultantSimple myResultantSimple = new ResultantSimple(dummyPoint, knownForceLines, knownForceLinesForAngles);
                         knownForceLine = myResultantSimple.ResultantLine;
                         
                     }
@@ -169,7 +174,7 @@ namespace GHPlugin
 
                     knownForceLineForAngle = knownForceLinesForAngles[0];
                     myJoints[i].FindAngles(knownForceLineForAngle, unknownForceLines, out myAngles, out myUnkownVectors);
-                    functions.ThreeForceJoint(myAngles, knownForceLine, myUnkownVectors, out unknownForceLines, out myPostiveForces);
+                    functions.ThreeForceJoint(myAngles, knownForceLine, myUnkownVectors, out unknownForceLines, out myPostiveForces, out myMiddlePoint);
 
                     for (int j = 0; j < halfMemberIndices.Count; j++)
                     {
@@ -177,6 +182,7 @@ namespace GHPlugin
                         globalMembers[myHalfMembers[correspondingHalfMemberIndices[j]].MemberIndex].Force = unknownForceLines[halfMemberIndices[j]].Length;
                         globalMembers[myHalfMembers[correspondingHalfMemberIndices[j]].MemberIndex].PositiveForce = myPostiveForces[halfMemberIndices[j]];
                         globalMembers[myHalfMembers[correspondingHalfMemberIndices[j]].MemberIndex].Known = true;
+                        MemberLinesForce.Add(unknownForceLines[halfMemberIndices[j]]);
                     }
 
                     for (int j = 0; j < supportIndices.Count; j++)

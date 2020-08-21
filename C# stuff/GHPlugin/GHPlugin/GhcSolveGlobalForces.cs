@@ -137,7 +137,7 @@ namespace GHPlugin
             for (int i = 0; i < oVirtMembers.Count; i++)
                 oVirtMemberLinesForm.Add(oVirtMembers[i].MemberLine);
 
-
+            myResultant.ResultantForAngle(myGlobalDiagram);
 
             for (int i = 0; i < myGlobalDiagram.GlobalJoints.Count ; i++)
             {

@@ -8,12 +8,13 @@ using System.Threading.Tasks;
 
 namespace GHPlugin
 {
-    class Resultant
+    public class Resultant
     {
         public Point3d StartPointForce;
         public List<ExternalForce> ExternalForces;
         public List<Line> ForceLinesForce;
         public Line ResultantForce;
+        public Line ResultantForceForAngle;
         public Point3d PointForm;
         public Line ResultantForm;
 
@@ -87,6 +88,32 @@ namespace GHPlugin
                     ResultantForm = resultantLine;
                 }
             }
+        }
+
+        public void ResultantForAngle(GlobalDiagram globaldiagram)
+        {
+            Boolean flip = false;
+            Plane planeXY = new Plane(new Point3d(0, 0, 0), new Vector3d(0, 0, 1));
+            Line resultantFlipped = ResultantForm;
+            resultantFlipped.Flip();
+            Vector3d m0 = globaldiagram.MemberLinesForm[0].Direction;
+            Vector3d m1 = globaldiagram.MemberLinesForm[1].Direction;
+
+            if (Vector3d.VectorAngle(m0,m1, planeXY) < Math.PI)
+            {
+                if (Vector3d.VectorAngle(m0, resultantFlipped.Direction, planeXY) < Vector3d.VectorAngle(m0, m1, planeXY))
+                    flip = true;
+            }
+            else
+            {
+                if (Vector3d.VectorAngle(m1, resultantFlipped.Direction, planeXY) < Vector3d.VectorAngle(m1, m0, planeXY))
+                    flip = true;
+            }
+
+            ResultantForceForAngle = ResultantForce;
+            if (flip)
+                ResultantForceForAngle.Flip();
+            return;
         }
     }
 }

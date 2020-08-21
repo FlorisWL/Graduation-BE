@@ -11,7 +11,7 @@ namespace GHPlugin
 {
     public class Functions
     {
-        public void ThreeForceJoint(List<double> angles, Line mainLine, List<Vector3d> otherVectors, out List<Line> otherForceLines, out List<bool> positiveForce)
+        public void ThreeForceJoint(List<double> angles, Line mainLine, List<Vector3d> otherVectors, out List<Line> otherForceLines, out List<bool> positiveForce, out Point3d middlePoint)
         {
             double pA; double pB;
             List<Line> OtherForceLines = new List<Line>();
@@ -53,8 +53,10 @@ namespace GHPlugin
                     myPositiveForce.Add(true);
             }
             positiveForce = myPositiveForce;
-
+            middlePoint = MiddlePoint;
             return;
         }
+
+        
     }
 }
