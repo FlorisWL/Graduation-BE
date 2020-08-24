@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace GHPlugin
 {
-    class HalfMember
+    public class HalfMember
     {
         public int MemberIndex;
         public int JointIndex;

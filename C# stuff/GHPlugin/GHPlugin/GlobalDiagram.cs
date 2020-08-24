@@ -1,6 +1,7 @@
 ﻿using Rhino.Geometry;
 using System;
 using System.Collections.Generic;
+using System.Drawing.Printing;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -13,6 +14,7 @@ namespace GHPlugin
         public List<SupportReaction> AllSupportReactions;
         public List<Line> MemberLinesForm = new List<Line>();
         public List<Line> MemberLinesForce = new List<Line>();
+        public List<HalfMember> HalfMembersForm = new List<HalfMember>();
         public List<Point3d> GlobalJoints = new List<Point3d>();
         public Point3d dummyPoint = new Point3d(0,0,0);
 
@@ -35,6 +37,19 @@ namespace GHPlugin
             globalJoints.Add(supportPoint0);
             globalJoints.Add(supportPoint1);
             GlobalJoints = globalJoints;
+
+            for (int i = 0; i<GlobalJoints.Count;i++)
+            {
+                for (int j = 0; j < GlobalJoints.Count; j++)
+                {
+                    if (GlobalJoints[i] == allSupportReactions[j].Joint)
+                    {
+                        allSupportReactions[j].GlobalJointIndex = i;
+                    }
+
+                }
+
+            }
         }
 
         public List<Member> Members()
@@ -50,6 +65,12 @@ namespace GHPlugin
                 MemberLinesForm.Add(globalMembers[i].MemberLine);
             }
 
+            for (int i = 0; i < globalMembers.Count; i++)
+            {
+                HalfMembersForm.Add(new HalfMember(i, globalMembers[i], true, GlobalJoints));
+                HalfMembersForm.Add(new HalfMember(i, globalMembers[i], false, GlobalJoints));
+            }
+
             return globalMembers;
         }
 
@@ -58,79 +79,68 @@ namespace GHPlugin
         public void SolveForceDiagram(List<Member> globalMembers)
         {
             Functions functions = new Functions();
-            List<Joint> myJoints = new List<Joint>();
-            for (int i = 0; i < GlobalJoints.Count; i++)
-            {
-                myJoints.Add(new Joint(GlobalJoints[i]));
-            }
-
-            List<HalfMember> myHalfMembers = new List<HalfMember>();
-            for (int i = 0; i < globalMembers.Count; i++)
-            {
-                myHalfMembers.Add(new HalfMember(i, globalMembers[i], true, GlobalJoints));
-                myHalfMembers.Add(new HalfMember(i, globalMembers[i], false, GlobalJoints));
-            }
-
             List<Member> returnMembers = globalMembers;
 
             int unknowns;
             int knowns;
+
             List<int> halfMemberIndices;
             List<int> correspondingHalfMemberIndices;
             List<int> supportIndices;
             List<int> correspondingSupportIndices;
-            Boolean forceApplied;
             List<Line> unknownForceLines;
             List<Line> knownForceLines;
             List<Line> knownForceLinesForAngles;
             Line knownForceLine;
+
             List<double> myAngles;
             List<Vector3d> myUnkownVectors;
             List<Boolean> myPostiveForces;
             Point3d myMiddlePoint;
 
-            for (int i = 0; i < myJoints.Count; i++)
+            for (int i = 0; i < GlobalJoints.Count; i++)
             {
                 unknowns = 0;
                 knowns = 0;
+
                 halfMemberIndices = new List<int>();  //Indices of myHalfMembers in unknownForceLines
                 correspondingHalfMemberIndices = new List<int>();  //corresponding indices in myHalfMembers
                 supportIndices = new List<int>();
                 correspondingSupportIndices = new List<int>();
-                forceApplied = false;
                 unknownForceLines = new List<Line>();
                 knownForceLines = new List<Line>();
                 knownForceLinesForAngles = new List<Line>();
+
                 Line knownForceLineForAngle;
                 Line forceLineTemp;
 
-                for (int j = 0; j < myHalfMembers.Count; j++)
-                    if (i == myHalfMembers[j].JointIndex)
+                for (int j = 0; j < HalfMembersForm.Count; j++)
+                    if (i == HalfMembersForm[j].JointIndex)
                     {
-                        if (globalMembers[myHalfMembers[j].MemberIndex].Known == false)
+                        if (globalMembers[HalfMembersForm[j].MemberIndex].Known == false)
                         {
                             unknowns += 1;
                             halfMemberIndices.Add(unknownForceLines.Count);
                             correspondingHalfMemberIndices.Add(j);
-                            unknownForceLines.Add(myHalfMembers[j].HalfMemberLine);
+                            unknownForceLines.Add(HalfMembersForm[j].HalfMemberLine);
                         }
                         else
                         {
                             knowns += 1;
-                            forceLineTemp = globalMembers[myHalfMembers[j].MemberIndex].ForceLine;
+                            forceLineTemp = globalMembers[HalfMembersForm[j].MemberIndex].ForceLine;
 
-                            if (Vector3d.Multiply(forceLineTemp.Direction, myHalfMembers[j].HalfMemberLine.Direction) > 0.0)
+                            if (Vector3d.Multiply(forceLineTemp.Direction, HalfMembersForm[j].HalfMemberLine.Direction) > 0.0)
                             {
-                                if (globalMembers[myHalfMembers[j].MemberIndex].PositiveForce == true)
+                                if (globalMembers[HalfMembersForm[j].MemberIndex].PositiveForce == true)
                                     forceLineTemp.Flip();
                             }
                             else
                             {
-                                if (globalMembers[myHalfMembers[j].MemberIndex].PositiveForce == false)
+                                if (globalMembers[HalfMembersForm[j].MemberIndex].PositiveForce == false)
                                     forceLineTemp.Flip();
                             }
                             knownForceLines.Add(forceLineTemp);
-                            knownForceLinesForAngles.Add(myHalfMembers[j].HalfMemberLine);
+                            knownForceLinesForAngles.Add(HalfMembersForm[j].HalfMemberLine);
                         }
                     }
 
@@ -142,7 +152,7 @@ namespace GHPlugin
                             unknowns += 1;
                             supportIndices.Add(unknownForceLines.Count);
                             correspondingSupportIndices.Add(j);
-                            unknownForceLines.Add(AllSupportReactions[j].FormLine);
+                            unknownForceLines.Add(AllSupportReactions[j].FormLineForAngle);
                         }
                         else
                         {
@@ -154,7 +164,6 @@ namespace GHPlugin
 
                 if (GlobalJoints[i].DistanceToSquared(ForceResultant.ResultantForm.To) < 0.00001)
                 {
-                    forceApplied = true;
                     knowns += 1;
                     knownForceLines.Add(ForceResultant.ResultantForce);
                     knownForceLinesForAngles.Add(ForceResultant.ResultantForceForAngle);
@@ -173,25 +182,30 @@ namespace GHPlugin
                         knownForceLine = knownForceLines[0];
 
                     knownForceLineForAngle = knownForceLinesForAngles[0];
-                    myJoints[i].FindAngles(knownForceLineForAngle, unknownForceLines, out myAngles, out myUnkownVectors);
-                    functions.ThreeForceJoint(myAngles, knownForceLine, myUnkownVectors, out unknownForceLines, out myPostiveForces, out myMiddlePoint);
+                    functions.FindAngles(knownForceLineForAngle, unknownForceLines, out myAngles, out myUnkownVectors);
+                    bool valid = functions.ThreeForceJoint(myAngles, knownForceLine, myUnkownVectors, out unknownForceLines, out myPostiveForces, out myMiddlePoint);
 
-                    for (int j = 0; j < halfMemberIndices.Count; j++)
+                    if (valid)
                     {
-                        globalMembers[myHalfMembers[correspondingHalfMemberIndices[j]].MemberIndex].ForceLine = unknownForceLines[halfMemberIndices[j]];
-                        globalMembers[myHalfMembers[correspondingHalfMemberIndices[j]].MemberIndex].Force = unknownForceLines[halfMemberIndices[j]].Length;
-                        globalMembers[myHalfMembers[correspondingHalfMemberIndices[j]].MemberIndex].PositiveForce = myPostiveForces[halfMemberIndices[j]];
-                        globalMembers[myHalfMembers[correspondingHalfMemberIndices[j]].MemberIndex].Known = true;
-                        MemberLinesForce.Add(unknownForceLines[halfMemberIndices[j]]);
-                    }
+                        for (int j = 0; j < halfMemberIndices.Count; j++)
+                        {
+                            globalMembers[HalfMembersForm[correspondingHalfMemberIndices[j]].MemberIndex].ForceLine = unknownForceLines[halfMemberIndices[j]];
+                            globalMembers[HalfMembersForm[correspondingHalfMemberIndices[j]].MemberIndex].Force = unknownForceLines[halfMemberIndices[j]].Length;
+                            globalMembers[HalfMembersForm[correspondingHalfMemberIndices[j]].MemberIndex].PositiveForce = myPostiveForces[halfMemberIndices[j]];
+                            globalMembers[HalfMembersForm[correspondingHalfMemberIndices[j]].MemberIndex].Known = true;
+                            MemberLinesForce.Add(unknownForceLines[halfMemberIndices[j]]);
+                        }
 
-                    for (int j = 0; j < supportIndices.Count; j++)
-                    {
-                        AllSupportReactions[correspondingSupportIndices[j]].ForceLine = unknownForceLines[supportIndices[j]];
-                        AllSupportReactions[correspondingSupportIndices[j]].Force = unknownForceLines[supportIndices[j]].Length;
-                        AllSupportReactions[correspondingSupportIndices[j]].PositiveForce = myPostiveForces[supportIndices[j]];
-                        AllSupportReactions[correspondingSupportIndices[j]].Known = true;
+                        for (int j = 0; j < supportIndices.Count; j++)
+                        {
+                            AllSupportReactions[correspondingSupportIndices[j]].ForceLine = unknownForceLines[supportIndices[j]];
+                            AllSupportReactions[correspondingSupportIndices[j]].Force = unknownForceLines[supportIndices[j]].Length;
+                            AllSupportReactions[correspondingSupportIndices[j]].PositiveForce = myPostiveForces[supportIndices[j]];
+                            AllSupportReactions[correspondingSupportIndices[j]].Known = true;
+                        }
                     }
+                    else
+                        //message: Print("Error: system is unstable! Try changing the support reactions.");
 
                     return;
 

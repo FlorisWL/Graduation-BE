@@ -133,22 +133,25 @@ namespace GHPlugin
 
             GlobalDiagram myGlobalDiagram = new GlobalDiagram(myResultant, mySupportReactions);
             List<Member> oVirtMembers = myGlobalDiagram.Members();
-            
+            List<HalfMember> myHalfMembers = myGlobalDiagram.HalfMembersForm;
+            myResultant.ResultantForAngle(myGlobalDiagram);
+
             for (int i = 0; i < oVirtMembers.Count; i++)
                 oVirtMemberLinesForm.Add(oVirtMembers[i].MemberLine);
 
-            myResultant.ResultantForAngle(myGlobalDiagram);
+            for (int i = 0; i < mySupportReactions.Count; i++)
+                mySupportReactions[i].SupportLineForAngle(myGlobalDiagram, myHalfMembers);
 
             for (int i = 0; i < myGlobalDiagram.GlobalJoints.Count ; i++)
             {
                 myGlobalDiagram.SolveForceDiagram(oVirtMembers);
             }
 
-            for (int j = 0; j < mySupportReactions.Count; j++)
-                oSupportLinesForce.Add(mySupportReactions[j].ForceLine);
+            for (int i = 0; i < mySupportReactions.Count; i++)
+                oSupportLinesForce.Add(mySupportReactions[i].ForceLine);
 
-            for (int j = 0; j < oVirtMembers.Count; j++)
-                oVirtMemberLinesForce.Add(oVirtMembers[j].ForceLine);
+            for (int i = 0; i < oVirtMembers.Count; i++)
+                oVirtMemberLinesForce.Add(oVirtMembers[i].ForceLine);
 
             DA.SetDataList(0, oSupportLinesForm);
             DA.SetDataList(1, oExtForceLinesForm);
