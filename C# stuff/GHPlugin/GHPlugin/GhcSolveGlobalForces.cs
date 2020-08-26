@@ -29,6 +29,8 @@ namespace GHPlugin
             pManager.AddNumberParameter("Scaling Factor", "Scaling Factor", "A scaling factor for the force diagram [Force/Length]!", GH_ParamAccess.item);
 
             pManager.AddPointParameter("Joints", "Joints", "All nodes of the structure!", GH_ParamAccess.list);
+            pManager.AddIntegerParameter("Member start indices", "Members start", "The joint indices of the start points of the members!", GH_ParamAccess.list);
+            pManager.AddIntegerParameter("Member end indices", "Members end", "The joint indices of the end points of the members!", GH_ParamAccess.list);
 
             pManager.AddIntegerParameter("Force: Index", "Force: Index", "The indices in the Joints list where an external force should be applied!",GH_ParamAccess.list);
             pManager.AddNumberParameter("Force: Magnitude", "Force: Magnitude", "The magnitude of the external forces!", GH_ParamAccess.list);
@@ -49,7 +51,7 @@ namespace GHPlugin
             pManager.AddLineParameter("Supports Form", "Supports Form", "The lines of the supports reactions in the form diagram!", GH_ParamAccess.list);
             pManager.AddLineParameter("External Forces Form", "Ext. Forces Form", "The lines of the external forces in the form diagram!", GH_ParamAccess.list);
             pManager.AddLineParameter("Resultant Form", "Resultant Form", "The line of the resultant force in the form diagram!", GH_ParamAccess.item);
-            pManager.AddLineParameter("Virtual Members Form", "Virt. Members Form", "The lines of the (virtual) members in the global form diagram!", GH_ParamAccess.list);
+            pManager.AddLineParameter("Members Form", "Members Form", "The lines of the members in the global form diagram. Can be either the general members or the virtual global members, depending on the chosen display option!", GH_ParamAccess.list);
 
             pManager.AddLineParameter("Supports Force", "Supports Force", "The lines of the supports reactions in the force diagram!", GH_ParamAccess.list);
             pManager.AddLineParameter("External Forces Force", "Ext. Forces Force", "The lines of the external forces in the force diagram!", GH_ParamAccess.list);
@@ -57,8 +59,8 @@ namespace GHPlugin
             pManager.AddLineParameter("Virtual Members Force", "Virt. Members Force", "The lines of the  (virtual) members in the global force diagram!", GH_ParamAccess.list);
 
             pManager.AddNumberParameter("Force Magnitudes Supports", "Force Magnitude Supports","The magnitude of the support reactions!",GH_ParamAccess.list);
-
-            pManager.AddRectangleParameter("Members unified diagram", "Members unified diagram", "Member geometry to display for the unified diagram", GH_ParamAccess.list);
+            
+            pManager.AddBrepParameter("Members unified diagram", "Members unified diagram", "Member geometry to display for the unified diagram", GH_ParamAccess.list);
             pManager.AddColourParameter("Colour Global Members", "Colour Global Members", "The colours of global members: blue for compression, red for tension!", GH_ParamAccess.list);
         }
 
@@ -69,6 +71,8 @@ namespace GHPlugin
             Point3d iStartForceDiagram = new Point3d(0, 0, 0);
             double iScalingFactor = 100.0;
             List<Point3d> iJoints = new List<Point3d>();
+            List<int> iMemberStartIndices = new List<int>();
+            List<int> iMemberEndIndices = new List<int>();
             List<int> iForceIndices = new List<int>();
             List<double> iForceMagnitudes = new List<double>();
             List<double> iForceRotations = new List<double>();
@@ -83,16 +87,18 @@ namespace GHPlugin
             DA.GetData(0, ref iStartForceDiagram);
             DA.GetData(1, ref iScalingFactor);
             DA.GetDataList(2, iJoints);
-            DA.GetDataList(3, iForceIndices);
-            DA.GetDataList(4, iForceMagnitudes);
-            DA.GetDataList(5, iForceRotations);
-            DA.GetDataList(6, iSupportIndices);
-            DA.GetDataList(7, iSupportHorizontals);
-            DA.GetDataList(8, iSupportVerticals);
-            DA.GetDataList(9, iSupportRotations);
-            DA.GetData(10, ref iDisplayOption);
-            DA.GetData(11, ref iDisplayForceDiagram);
-            DA.GetData(12, ref iDisplayNumericalValues);
+            DA.GetDataList(3, iMemberStartIndices);
+            DA.GetDataList(4, iMemberEndIndices);
+            DA.GetDataList(5, iForceIndices);
+            DA.GetDataList(6, iForceMagnitudes);
+            DA.GetDataList(7, iForceRotations);
+            DA.GetDataList(8, iSupportIndices);
+            DA.GetDataList(9, iSupportHorizontals);
+            DA.GetDataList(10, iSupportVerticals);
+            DA.GetDataList(11, iSupportRotations);
+            DA.GetData(12, ref iDisplayOption);
+            DA.GetData(13, ref iDisplayForceDiagram);
+            DA.GetData(14, ref iDisplayNumericalValues);
 
             if ((iSupportRotations.Count != iSupportIndices.Count) && (iSupportRotations.Count == 1))
                 iSupportRotations = functions.CreateDefaultList(iSupportIndices.Count,iSupportRotations[0]);
@@ -105,7 +111,7 @@ namespace GHPlugin
             List<Line> oSupportLinesForm = new List<Line>();
             List<Line> oExtForceLinesForm = new List<Line>();
             Line oResultantLineForm;
-            List<Line> oVirtMemberLinesForm = new List<Line>();
+            List<Line> oMemberLinesForm = new List<Line>();
             List<Line> oSupportLinesForce = new List<Line>();
             List<Line> oExtForceLinesForce;
             Line oResultantLineForce;
@@ -167,7 +173,7 @@ namespace GHPlugin
 
 
             for (int i = 0; i < myVirtMembers.Count; i++)
-                oVirtMemberLinesForm.Add(myVirtMembers[i].MemberLine);
+                oMemberLinesForm.Add(myVirtMembers[i].MemberLine);
 
             for (int i = 0; i < mySupportReactions.Count; i++)
                 mySupportReactions[i].SupportLineForAngle(myHalfMembers);
@@ -189,20 +195,11 @@ namespace GHPlugin
             for (int i = 0; i < myVirtMembers.Count; i++)
                 oVirtMemberLinesForce.Add(myVirtMembers[i].ForceLine);
 
-
-            List<Rectangle3d> oDisplayRectangles = new List<Rectangle3d>();
-            List<Color> oMemberColors = new List<Color>();
-
-            if (iDisplayOption == 2)
-            {
-                functions.DisplayRectangles(myVirtMembers, myScalingFactorUnified, out oDisplayRectangles, out oMemberColors);
-            }
-
             for (int i = 0; i < mySupportReactions.Count; i++)
             {
                 double supportLengthForm = mySupportReactions[i].Force * ratio;
                 double extendValue = supportLengthForm - 1.0;
-                mySupportReactions[i].FormLine.Extend(extendValue,0);
+                mySupportReactions[i].FormLine.Extend(extendValue, 0);
 
                 if (mySupportReactions[i].PositiveForce)
                     mySupportReactions[i].FormLine.Flip();
@@ -210,16 +207,52 @@ namespace GHPlugin
                 oSupportLinesForm.Add(mySupportReactions[i].FormLine);
             }
 
+            List<Brep> oDisplayBreps = new List<Brep>();
+            List<Color> oMemberColors = new List<Color>();
+            List<Line> memberLinesForm = new List<Line>();
+            List<Member> allMembers = new List<Member>();
+
+            for (int i = 0; i < iMemberStartIndices.Count; i++)
+            {
+                allMembers.Add(new Member(iMemberStartIndices[i], iMemberEndIndices[i], iJoints));
+                memberLinesForm.Add(allMembers[i].MemberLine);
+                oMemberColors.Add(Color.FromName("Black"));
+            }
+
+            if (iDisplayOption == 0)
+            {
+                oMemberLinesForm = memberLinesForm;
+                oVirtMemberLinesForce = new List<Line>();
+            }
+            if (iDisplayOption == 1)
+            {
+                functions.DisplayColors(myVirtMembers, out oMemberColors);
+
+            }
+            if (iDisplayOption == 2)
+            {
+                functions.DisplayRectangles(myVirtMembers, myScalingFactorUnified, out oDisplayBreps);
+                functions.DisplayColors(myVirtMembers, out oMemberColors);
+            }
+
+            if (iDisplayForceDiagram == false)
+            {
+                oExtForceLinesForce = new List<Line>();
+                oResultantLineForce = new Line();
+                oSupportLinesForce = new List<Line>();
+                oVirtMemberLinesForce = new List<Line>();
+            }
+
             DA.SetDataList(0, oSupportLinesForm);
             DA.SetDataList(1, oExtForceLinesForm);
             DA.SetData(2, oResultantLineForm);
-            DA.SetDataList(3, oVirtMemberLinesForm);
+            DA.SetDataList(3, oMemberLinesForm);
             DA.SetDataList(4, oSupportLinesForce);
             DA.SetDataList(5, oExtForceLinesForce);
             DA.SetData(6, oResultantLineForce);
             DA.SetDataList(7, oVirtMemberLinesForce);
             DA.SetDataList(8, oSupportForceMagnitudes);
-            DA.SetDataList(9, oDisplayRectangles);
+            DA.SetDataList(9, oDisplayBreps);
             DA.SetDataList(10, oMemberColors);
         }
 

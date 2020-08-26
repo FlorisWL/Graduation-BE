@@ -1,4 +1,5 @@
-﻿using Rhino.Display;
+﻿using Grasshopper.Kernel.Types;
+using Rhino.Display;
 using Rhino.Geometry;
 using Rhino.Geometry.Intersect;
 using System;
@@ -80,7 +81,7 @@ namespace GHPlugin
             return valid;
         }
 
-        public void FindAngles(Line mainLine, List<Line> otherLines, out List<double> angles, out List<Vector3d> otherVectors)
+        public void FindAngles(Line mainLine, List<Line> otherLinesForAngle, List<Line> otherLines, out List<double> angles, out List<Vector3d> otherVectors)
         {
             Plane planeXY = new Plane(new Point3d(0, 0, 0), new Vector3d(0, 0, 1));
             Vector3d mainVector = mainLine.Direction;
@@ -90,7 +91,7 @@ namespace GHPlugin
             for (int i = 0; i < otherLines.Count; i++)
             {
                 myOtherVectors.Add(otherLines[i].Direction);
-                myAngles.Add(Vector3d.VectorAngle(mainVector, myOtherVectors[i], planeXY));
+                myAngles.Add(Vector3d.VectorAngle(mainVector, otherLinesForAngle[i].Direction, planeXY));
             }
 
             angles = myAngles;
@@ -99,10 +100,10 @@ namespace GHPlugin
             return;
         }
     
-        public void DisplayRectangles(List<Member> members, double scalingFactorUnified, out List<Rectangle3d> oRectangles, out List<Color> oColors)
+        public void DisplayRectangles(List<Member> members, double scalingFactorUnified, out List<Brep> oBreps)
         {
-            List<Rectangle3d> rectangles = new List<Rectangle3d>();
-            List<Color> colors = new List<Color>();
+            Rectangle3d rectangle;
+            List<Brep> breps = new List<Brep>();
             Vector3d normal1;
             Vector3d normal2;
             Point3d point1;
@@ -131,20 +132,32 @@ namespace GHPlugin
                 angle = Vector3d.VectorAngle(new Vector3d(1, 0, 0), members[i].MemberLine.Direction, planeXY);
                 planeXY.Rotate(angle, new Vector3d(0, 0, 1));
 
-                rectangles.Add(new Rectangle3d(planeXY, point1, point2));
-
-                if (members[i].PositiveForce)
-                    colors.Add(Color.FromName("Blue"));
-                else
-                    colors.Add(Color.FromName("Red"));
+                rectangle = new Rectangle3d(planeXY, point1, point2);
+                PolylineCurve curveRectangle = rectangle.ToPolyline().ToPolylineCurve();
+                breps.Add(Brep.CreatePlanarBreps(curveRectangle, 0.000001)[0]);
             }
 
-            oRectangles = rectangles;
-            oColors = colors;
+            oBreps = breps;
 
             return;
         }
     
+        public void DisplayColors(List<Member> members, out List<Color> oColors)
+        {
+            List<Color> colors = new List<Color>();
+
+            for (int i = 0; i < members.Count; i++)
+            {
+                if (members[i].PositiveForce == false)
+                    colors.Add(Color.FromArgb(122, Color.FromName("Blue")));
+                else
+                    colors.Add(Color.FromArgb(122, Color.FromName("Red")));
+            }
+
+            oColors = colors;
+
+            return;
+        }
         public Point3d CenterPoint(List<Point3d> joints)
         {
             Point3d centerPoint = new Point3d(0,0,0);

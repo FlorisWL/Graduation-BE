@@ -90,6 +90,7 @@ namespace GHPlugin
             List<Line> unknownForceLines;
             List<Line> knownForceLines;
             List<Line> knownForceLinesForAngles;
+            List<Line> unknownForceLinesForAngle;
             Line knownForceLine;
 
             List<double> myAngles;
@@ -109,6 +110,7 @@ namespace GHPlugin
                 unknownForceLines = new List<Line>();
                 knownForceLines = new List<Line>();
                 knownForceLinesForAngles = new List<Line>();
+                unknownForceLinesForAngle = new List<Line>();
 
                 Line knownForceLineForAngle;
                 Line forceLineTemp;
@@ -122,6 +124,7 @@ namespace GHPlugin
                             halfMemberIndices.Add(unknownForceLines.Count);
                             correspondingHalfMemberIndices.Add(j);
                             unknownForceLines.Add(HalfMembersForm[j].HalfMemberLine);
+                            unknownForceLinesForAngle.Add(HalfMembersForm[j].HalfMemberLine);
                         }
                         else
                         {
@@ -151,7 +154,8 @@ namespace GHPlugin
                             unknowns += 1;
                             supportIndices.Add(unknownForceLines.Count);
                             correspondingSupportIndices.Add(j);
-                            unknownForceLines.Add(AllSupportReactions[j].FormLineForAngle);
+                            unknownForceLines.Add(AllSupportReactions[j].FormLine);
+                            unknownForceLinesForAngle.Add(AllSupportReactions[j].FormLineForAngle);
                         }
                         else
                         {
@@ -181,7 +185,7 @@ namespace GHPlugin
                         knownForceLine = knownForceLines[0];
 
                     knownForceLineForAngle = knownForceLinesForAngles[0];
-                    functions.FindAngles(knownForceLineForAngle, unknownForceLines, out myAngles, out myUnkownVectors);
+                    functions.FindAngles(knownForceLineForAngle, unknownForceLinesForAngle, unknownForceLines, out myAngles, out myUnkownVectors);
                     bool valid = functions.ThreeForceJoint(myAngles, knownForceLine, myUnkownVectors, out unknownForceLines, out myPostiveForces, out myMiddlePoint);
 
                     if (valid)
