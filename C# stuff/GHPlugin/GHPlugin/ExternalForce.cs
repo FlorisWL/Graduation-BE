@@ -47,7 +47,12 @@ namespace GHPlugin
             FormLine = formLine;
         }
 
-
+        public void LengthenFormLines(double ratio)
+        {
+            double forceLengthForm = Force * ratio;
+            double extendValue = forceLengthForm - 1.0;
+            FormLine.Extend(extendValue, 0);
+        }
 
     }
 }

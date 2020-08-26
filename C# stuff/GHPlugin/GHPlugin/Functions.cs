@@ -1,7 +1,9 @@
-﻿using Rhino.Geometry;
+﻿using Rhino.Display;
+using Rhino.Geometry;
 using Rhino.Geometry.Intersect;
 using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Linq;
 using System.Runtime.Remoting.Metadata.W3cXsd2001;
 using System.Text;
@@ -11,6 +13,16 @@ namespace GHPlugin
 {
     public class Functions
     {
+        public List<double> CreateDefaultList(int listLength, double value)
+        {
+            List<double> defaultList = new List<double>();
+
+            for (int i = 0; i < listLength; i++)
+                defaultList.Add(value);
+
+            return defaultList;
+        }
+        
         public Boolean ThreeForceJoint(List<double> angles, Line mainLine, List<Vector3d> otherVectors, out List<Line> otherForceLines, out List<bool> positiveForce, out Point3d middlePoint)
         {
             double pA; double pB;
@@ -18,7 +30,7 @@ namespace GHPlugin
             Point3d MiddlePoint;
             bool Flipped = false;
             List<bool> myPositiveForce = new List<bool>();
-            bool valid = true;
+            bool valid;
 
             if (angles[0] < angles[1])
             {
@@ -85,6 +97,63 @@ namespace GHPlugin
             otherVectors = myOtherVectors;
 
             return;
+        }
+    
+        public void DisplayRectangles(List<Member> members, double scalingFactorUnified, out List<Rectangle3d> oRectangles, out List<Color> oColors)
+        {
+            List<Rectangle3d> rectangles = new List<Rectangle3d>();
+            List<Color> colors = new List<Color>();
+            Vector3d normal1;
+            Vector3d normal2;
+            Point3d point1;
+            Point3d point2;
+            
+            Vector3d zPostive = new Vector3d(0, 0, 1);
+            double thickness;
+            double angle;
+
+            for (int i = 0; i < members.Count; i++)
+            {
+                thickness = members[i].Force * scalingFactorUnified;
+                //thickness = 1;
+                point1 = members[i].MemberLine.From;
+                point2 = members[i].MemberLine.To;
+                normal1 = members[i].MemberLine.Direction;
+                normal1.Unitize();
+                normal1 = normal2 = normal1* (thickness*0.5);
+                normal1.Rotate(0.5 * Math.PI, zPostive);
+                normal2.Rotate(-0.5 * Math.PI, zPostive);
+
+                point1 = Point3d.Add(point1, normal1);
+                point2 = Point3d.Add(point2, normal2);
+
+                Plane planeXY = new Plane(new Point3d(0, 0, 0), new Vector3d(0, 0, 1));
+                angle = Vector3d.VectorAngle(new Vector3d(1, 0, 0), members[i].MemberLine.Direction, planeXY);
+                planeXY.Rotate(angle, new Vector3d(0, 0, 1));
+
+                rectangles.Add(new Rectangle3d(planeXY, point1, point2));
+
+                if (members[i].PositiveForce)
+                    colors.Add(Color.FromName("Blue"));
+                else
+                    colors.Add(Color.FromName("Red"));
+            }
+
+            oRectangles = rectangles;
+            oColors = colors;
+
+            return;
+        }
+    
+        public Point3d CenterPoint(List<Point3d> joints)
+        {
+            Point3d centerPoint = new Point3d(0,0,0);
+            for (int i = 0; i < joints.Count; i++)
+            {
+                centerPoint += joints[i];
+            }
+            centerPoint = centerPoint / joints.Count;
+            return centerPoint;
         }
     }
 }

@@ -14,12 +14,13 @@ namespace GHPlugin
         public List<ExternalForce> ExternalForces;
         public List<Line> ForceLinesForce;
         public Line ResultantForce;
+        public double Force = 0.0;
         public Line ResultantForceForAngle;
         public Point3d PointForm;
         public Line ResultantForm;
 
 
-        public Resultant(Point3d startPointForce, List<ExternalForce> externalForces)
+        public Resultant(Point3d startPointForce, List<ExternalForce> externalForces, double ratio, Point3d centerPoint)
         {
             Vector3d zPostive = new Vector3d(0, 0, 1); 
             StartPointForce = startPointForce;
@@ -35,12 +36,14 @@ namespace GHPlugin
 
             ForceLinesForce = forceLinesForce;
             ResultantForce = new Line(forceLinesForce[0].From, forceLinesForce[forceLinesForce.Count - 1].To);
-            
-            Vector3d arbitraryVector = externalForces[0].ForceVector;
+            Force = ResultantForce.Length;
+            Vector3d resultantVector = ResultantForce.Direction;
+
+            Vector3d arbitraryVector = resultantVector / 1.0;
             arbitraryVector.Rotate(1.5, zPostive);
             Point3d arbitraryPoint = startPoint + arbitraryVector;
             PointForm = arbitraryPoint;
-            Vector3d resultantVector = ResultantForce.Direction;
+            
 
             List<Line> globalForceLines2 = new List<Line>();
             List<Line> globalForceLines1 = new List<Line>();
@@ -83,8 +86,13 @@ namespace GHPlugin
                     resultantPoint = lineA.PointAt(pA);
                     resultantVector.Unitize();
                     resultantVector.Reverse();
-                    Line resultantLine = new Line(resultantPoint, resultantVector * externalForces.Count);
+                    Line resultantLine = new Line(resultantPoint, resultantVector);
+                    resultantPoint = resultantLine.ClosestPoint(centerPoint, false);
+                    resultantLine = new Line(resultantPoint, resultantVector);
                     resultantLine.Flip();
+                    double forceLengthForm = Force * ratio;
+                    double extendValue = forceLengthForm - 1.0;
+                    resultantLine.Extend(extendValue, 0);
                     ResultantForm = resultantLine;
                 }
             }

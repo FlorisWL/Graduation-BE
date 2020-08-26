@@ -14,7 +14,7 @@ namespace GHPlugin
         public GhcCreateSupportReaction()
           : base("Create Support Reaction", "Support Reaction",
               "Create Support Reaction!",
-              "GS tool", "Graphic Statics")
+              "GS tool", "Graphic Statics - old")
         {
         }
 

@@ -79,7 +79,6 @@ namespace GHPlugin
         public void SolveForceDiagram(List<Member> globalMembers)
         {
             Functions functions = new Functions();
-            List<Member> returnMembers = globalMembers;
 
             int unknowns;
             int knowns;

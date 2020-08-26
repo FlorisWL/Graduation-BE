@@ -33,7 +33,7 @@ namespace GHPlugin
             FormLine = formLine;
         }
 
-        public void SupportLineForAngle(GlobalDiagram globaldiagram, List<HalfMember> halfMembers)
+        public void SupportLineForAngle(List<HalfMember> halfMembers)
         {
             Boolean flip = false;
             Plane planeXY = new Plane(new Point3d(0, 0, 0), new Vector3d(0, 0, 1));
