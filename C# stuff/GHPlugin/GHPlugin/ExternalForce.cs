@@ -15,6 +15,7 @@ namespace GHPlugin
         public Vector3d ForceVector;
         public double Force = 0.0;
         public Line FormLine;
+        public Line ForceLineForAngle;
         public Line ForceLine;
 
         public ExternalForce(int jointIndex, List<Point3d> joints, Vector3d forceVector)
@@ -45,6 +46,25 @@ namespace GHPlugin
             Line formLine = new Line(joints[jointIndex], baseVector);
             formLine.Flip();
             FormLine = formLine;
+        }
+
+        public ExternalForce(Line formLine, Line forceLine, List<Point3d> joints)
+        {
+            FormLine = formLine;
+            ForceLineForAngle = forceLine;
+            ForceLine = forceLine;
+            Force = ForceLine.Length;
+            ForceVector = ForceLine.Direction;
+            Direction = ForceLine.Direction;
+            Direction.Unitize();
+
+            for (int i = 0; i < joints.Count; i++)
+            {
+                if (formLine.To == joints[i])
+                {
+                    JointIndex = i;
+                }
+            }
         }
 
         public void LengthenFormLines(double ratio)

@@ -13,7 +13,7 @@ namespace GHPlugin
 
         public ResultantSimple(Point3d point, List<Line> knownForceLines, List<Line> knownForceLinesForAngles)
         {
-            Plane planeXY = new Plane(new Point3d(0, 0, 0), new Vector3d(0, 0, 1));
+            Plane planeXY = new Plane(new Point3d(0, 0, 0), new Vector3d(0, 0, -1));
             List<Line> resultantLineForces = new List<Line>();
             Point3d startPoint = point;
             if (knownForceLines.Count==2)

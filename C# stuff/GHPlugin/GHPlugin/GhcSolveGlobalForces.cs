@@ -1,13 +1,9 @@
 ﻿using System;
 using System.Drawing;
-using Rhino.Display;
 using System.Diagnostics;
 using System.Collections.Generic;
-using System.Drawing.Printing;
-using System.Windows.Forms.VisualStyles;
 using Grasshopper.Kernel;
 using Rhino.Geometry;
-using System.Linq;
 
 namespace GHPlugin
 {
@@ -56,7 +52,7 @@ namespace GHPlugin
             pManager.AddLineParameter("Supports Force", "Supports Force", "The lines of the supports reactions in the force diagram!", GH_ParamAccess.list);
             pManager.AddLineParameter("External Forces Force", "Ext. Forces Force", "The lines of the external forces in the force diagram!", GH_ParamAccess.list);
             pManager.AddLineParameter("Resultant Force", "Resultant Force", "The line of the resultant force in the force diagram!", GH_ParamAccess.item);
-            pManager.AddLineParameter("Virtual Members Force", "Virt. Members Force", "The lines of the  (virtual) members in the global force diagram!", GH_ParamAccess.list);
+            pManager.AddLineParameter("Virtual Members Force", "Virt. Members Force", "The lines of the (virtual) members in the global force diagram!", GH_ParamAccess.list);
 
             pManager.AddBrepParameter("Members unified diagram", "Members unified diagram", "Member geometry to display for the unified diagram", GH_ParamAccess.list);
             pManager.AddColourParameter("Colour Global Members", "Colour Global Members", "The colours of global members: blue for compression, red for tension!", GH_ParamAccess.list);
@@ -287,7 +283,7 @@ namespace GHPlugin
         {
             get
             {
-                return null;
+                return Properties.Resources.icon_solveglobal;
             }
         }
 

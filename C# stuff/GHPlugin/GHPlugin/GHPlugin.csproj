@@ -59,6 +59,7 @@
     <Compile Include="ExternalForce.cs" />
     <Compile Include="Functions.cs" />
     <Compile Include="GhcDisplayGlobalForces.cs" />
+    <Compile Include="GhcSolveMemberForces.cs" />
     <Compile Include="Old\GhcCreateExternalForce.cs" />
     <Compile Include="Old\GhcCreateSupportReaction.cs" />
     <Compile Include="GhcSolveGlobalForces.cs" />
@@ -102,7 +103,12 @@
   <ItemGroup>
     <None Include="Resources\movingparticle_icon.png" />
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <None Include="Resources\icon_solveglobal.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\icon_solvemembers.png" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

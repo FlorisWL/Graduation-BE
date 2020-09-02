@@ -17,6 +17,7 @@ namespace GHPlugin
         public Line FormLine;
         public Line FormLineForAngle;
         public Line ForceLine;
+        public Line ForceLineForAngle;
         public double Force = 0.0;
         public Boolean PositiveForce = true;
         public Boolean Known = false;
@@ -31,6 +32,73 @@ namespace GHPlugin
             Line formLine = new Line(joints[jointIndex], supportVector);
             formLine.Flip();
             FormLine = formLine;
+        }
+        
+        public SupportReaction(Line supportLineForm, Line supportLineForce, List<Point3d> joints)
+        {
+            FormLine = supportLineForm;
+            ForceLineForAngle = supportLineForce;
+            ForceLine = supportLineForce;
+            Direction = supportLineForce.Direction;
+            Direction.Unitize();
+            Force = supportLineForce.Length;
+            Known = true;
+
+            for (int i = 0; i < joints.Count; i++)
+            {
+                if (supportLineForm.To == joints[i])
+                {
+                    PositiveForce = true;
+                    Joint = joints[i];
+                    JointIndex = i;
+                }
+                if (supportLineForm.From == joints[i])
+                {
+                    PositiveForce = false;
+                    Joint = joints[i];
+                    JointIndex = i;
+                }
+            }
+        }
+
+        public void SupportLineForAngleGeneral(List<HalfMember> halfMembers)
+        {
+            Boolean flip = false;
+            Plane planeXY = new Plane(new Point3d(0, 0, 0), new Vector3d(0, 0, 1));
+            Line SupportFlipped = FormLine;
+            SupportFlipped.Flip();
+            List<Vector3d> m0m1 = new List<Vector3d>();
+
+            for (int i = 0; i < halfMembers.Count; i++)
+            {
+                if (halfMembers[i].JointIndex == GlobalJointIndex)
+                    m0m1.Add(halfMembers[i].HalfMemberLine.Direction);
+            }
+
+            for (int i = 0; i < m0m1.Count; i++)
+            {
+
+            }
+
+            Vector3d m0 = m0m1[0];
+            Vector3d m1 = m0m1[m0m1.Count - 1];
+
+            if (Vector3d.VectorAngle(m0, m1, planeXY) < Math.PI)
+            {
+                if (Vector3d.VectorAngle(m0, FormLine.Direction, planeXY) < Vector3d.VectorAngle(m0, m1, planeXY))
+                    flip = true;
+            }
+            else
+            {
+                if (Vector3d.VectorAngle(m1, FormLine.Direction, planeXY) < Vector3d.VectorAngle(m1, m0, planeXY))
+                    flip = true;
+            }
+
+            FormLineForAngle = FormLine;
+            if (flip)
+                FormLineForAngle.Flip();
+
+            return;
         }
 
         public void SupportLineForAngle(List<HalfMember> halfMembers)
@@ -48,7 +116,7 @@ namespace GHPlugin
             }
 
             Vector3d m0 = m0m1[0];
-            Vector3d m1 = m0m1[1];
+            Vector3d m1 = m0m1[m0m1.Count - 1];
 
             if (Vector3d.VectorAngle(m0, m1, planeXY) < Math.PI)
             {

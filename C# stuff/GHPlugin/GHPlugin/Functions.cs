@@ -33,7 +33,7 @@ namespace GHPlugin
             List<bool> myPositiveForce = new List<bool>();
             bool valid;
 
-            if (angles[0] < angles[1])
+            if (angles[0] > angles[1])
             {
                 OtherForceLines.Add(new Line(mainLine.To, otherVectors[0]));
                 OtherForceLines.Add(new Line(mainLine.From, otherVectors[1]));
