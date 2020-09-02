@@ -58,6 +58,7 @@
   <ItemGroup>
     <Compile Include="ExternalForce.cs" />
     <Compile Include="Functions.cs" />
+    <Compile Include="GeneralDiagram.cs" />
     <Compile Include="GhcDisplayGlobalForces.cs" />
     <Compile Include="GhcSolveMemberForces.cs" />
     <Compile Include="Old\GhcCreateExternalForce.cs" />
