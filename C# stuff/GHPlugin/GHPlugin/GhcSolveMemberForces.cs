@@ -126,7 +126,10 @@ namespace GHPlugin
             }
 
             GeneralDiagram myGeneralDiagram = new GeneralDiagram(allExternalForces, allSupports, allMembers, iJoints);
-            myGeneralDiagram.SolveForceDiagram();
+
+            for (int i = 0; i < myGeneralDiagram.AllJoints.Count; i++)
+                myGeneralDiagram.SolveForceDiagram();
+
             allMembers = myGeneralDiagram.AllMembers;
 
             for (int i = 0; i < allMembers.Count; i++)

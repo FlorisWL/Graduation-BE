@@ -13,7 +13,7 @@ namespace GHPlugin
         public List<ExternalForce> AllExternalForces;
         public List<SupportReaction> AllSupportReactions;
         public List<Member> AllMembers;
-        public List<HalfMember> allHalfMembers;
+        public List<HalfMember> allHalfMembers = new List<HalfMember>();
         public List<Point3d> AllJoints;
         public Point3d dummyPoint = new Point3d(0,0,0);
 
@@ -118,8 +118,8 @@ namespace GHPlugin
                         else
                         {
                             knowns += 1;
-                            knownForceLines.Add(AllSupportReactions[i].ForceLine);
-                            knownForceLinesForAngles.Add(AllSupportReactions[i].ForceLineForAngle);
+                            knownForceLines.Add(AllSupportReactions[j].ForceLine);
+                            knownForceLinesForAngles.Add(AllSupportReactions[j].ForceLineForAngle);
                         }
                     }
 
@@ -139,8 +139,11 @@ namespace GHPlugin
                     if (knowns > 1)
                     {
                         //startpoint (here dummypoint) for ResultantSimple gets overruled if knownForceLines.Count == 2, which should be the case here.
-                        ResultantSimple myResultantSimple = new ResultantSimple(dummyPoint, knownForceLines, knownForceLinesForAngles);
-                        knownForceLine = myResultantSimple.ResultantLine;
+                        ResultantSimple myResultantSimple = new ResultantSimple(dummyPoint, knownForceLines, knownForceLinesForAngles, unknownForceLinesForAngle);
+                        if (myResultantSimple.Valid == false)
+                            break;
+                        else
+                            knownForceLine = myResultantSimple.ResultantLine;
                         
                     }
                     else

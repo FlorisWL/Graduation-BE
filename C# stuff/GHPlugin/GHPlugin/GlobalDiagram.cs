@@ -177,7 +177,7 @@ namespace GHPlugin
                     if (knowns > 1)
                     {
                         //startpoint (here dummypoint) for ResultantSimple gets overruled if knownForceLines.Count == 2, which should be the case here.
-                        ResultantSimple myResultantSimple = new ResultantSimple(dummyPoint, knownForceLines, knownForceLinesForAngles);
+                        ResultantSimple myResultantSimple = new ResultantSimple(dummyPoint, knownForceLines, knownForceLinesForAngles, unknownForceLinesForAngle);
                         knownForceLine = myResultantSimple.ResultantLine;
                         
                     }
