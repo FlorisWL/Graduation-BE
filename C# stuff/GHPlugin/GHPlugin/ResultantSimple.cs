@@ -68,5 +68,34 @@ namespace GHPlugin
                 ResultantLine = new Line(resultantLineForces[0].From, resultantLineForces[resultantLineForces.Count - 1].To);
             }
         }
+
+        public ResultantSimple(Point3d point, List<Line> knownForceLines, List<Line> knownForceLinesForAngle)
+        {
+            Plane planeXY = new Plane(new Point3d(0, 0, 0), new Vector3d(0, 0, -1));
+            List<Line> resultantLineForces = new List<Line>();
+            Point3d startPoint = point;
+
+            if (knownForceLines.Count==2)
+            { 
+            double vectorAngle = Vector3d.VectorAngle(knownForceLinesForAngle[0].Direction, knownForceLinesForAngle[1].Direction, planeXY);
+                if (vectorAngle < Math.PI)
+                    startPoint = knownForceLines[0].From;
+                else
+                    startPoint = knownForceLines[1].From;
+
+                Valid = true;
+            }
+
+            if (Valid)
+            {
+                for (int i = 0; i < knownForceLines.Count; i++)
+                {
+                    resultantLineForces.Add(new Line(startPoint, knownForceLines[i].Direction));
+                    startPoint = resultantLineForces[i].To;
+                }
+
+                ResultantLine = new Line(resultantLineForces[0].From, resultantLineForces[resultantLineForces.Count - 1].To);
+            }
+        }
     }
 }
