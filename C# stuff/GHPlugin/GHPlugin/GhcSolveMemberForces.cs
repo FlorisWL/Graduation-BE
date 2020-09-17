@@ -108,7 +108,6 @@ namespace GHPlugin
             {
                 allMembers.Add(new Member(iMemberStartIndices[i], iMemberEndIndices[i], iJoints));
                 oMemberLinesForm.Add(allMembers[i].MemberLine);
-                oMemberColors.Add(Color.FromName("Black"));
             }
 
             List<SupportReaction> allSupports = new List<SupportReaction>();
@@ -134,7 +133,6 @@ namespace GHPlugin
 
             for (int i = 0; i < allMembers.Count; i++)
             {
-                oMemberLinesForm.Add(allMembers[i].MemberLine);
                 oMemberLinesForce.Add(allMembers[i].ForceLine);
                 if (allMembers[i].PositiveForce == false)
                     oMemberColors.Add(Color.FromArgb(122, Color.FromName("Blue")));

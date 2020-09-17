@@ -105,7 +105,7 @@ namespace GHPlugin
                     }
 
                 for (int j = 0; j < AllSupportReactions.Count; j++)
-                    if (AllJoints[i].DistanceToSquared(AllSupportReactions[j].Joint) < 0.00001)
+                    if (i == AllSupportReactions[j].JointIndex)
                     {
                         if (AllSupportReactions[j].Known == false)
                         {
