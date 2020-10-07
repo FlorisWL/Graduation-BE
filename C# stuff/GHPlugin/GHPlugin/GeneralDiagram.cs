@@ -13,31 +13,139 @@ namespace GHPlugin
         public List<ExternalForce> AllExternalForces;
         public List<SupportReaction> AllSupportReactions;
         public List<Member> AllMembers;
-        public List<HalfMember> allHalfMembers = new List<HalfMember>();
-        public List<Point3d> AllJoints;
-        public Point3d dummyPoint = new Point3d(0,0,0);
+        public List<HalfMember> AllHalfMembers = new List<HalfMember>();
+        public List<Point3d> AllPoints;
+        public List<Joint> AllJoints = new List<Joint>();
+        public Point3d DummyPoint = new Point3d(0,0,0);
+        public Functions MyFunctions = new Functions();
 
         public GeneralDiagram(
             List<ExternalForce> allExternalForces, List<SupportReaction> allSupportReactions, 
-            List<Member> allMembers, List<Point3d> allJoints)
+            List<Member> allMembers, List<Point3d> allPoints)
         {
             AllExternalForces = allExternalForces;
             AllSupportReactions = allSupportReactions;
             AllMembers = allMembers;
-            AllJoints = allJoints;
+            AllPoints = allPoints;
 
             for (int i = 0; i < allMembers.Count; i++)
             {
-                allHalfMembers.Add(new HalfMember(i, allMembers[i], true, AllJoints));
-                allHalfMembers.Add(new HalfMember(i, allMembers[i], false, AllJoints));
+                AllHalfMembers.Add(new HalfMember(i, allMembers[i], true, AllPoints));
+                AllHalfMembers.Add(new HalfMember(i, allMembers[i], false, AllPoints));
+            }
+
+            for (int i = 0; i < allPoints.Count; i++)
+            {
+                AllJoints.Add(new Joint(i, allPoints));
+                AllJoints[i].FillJoint(AllHalfMembers, AllExternalForces, allSupportReactions);
             }
         }
-       
+
+        public void KnownUnknownLines(Joint joint, ref List<Line> oKnownForceLines, ref List<Line> oUnknownForceLines, ref List<Line> oKnownForceLinesForAngles)
+        {
+            List<Line> knownForceLines = new List<Line>();
+            List<Line> unknownForceLines = new List<Line>();
+            for (int i = 0; i < joint.MemberIndices.Count; i++)
+            {
+                if (AllMembers[joint.MemberIndices[i]].Known)
+                    knownForceLines.Add(AllMembers[joint.MemberIndices[i]].ForceLine);
+                else
+                    unknownForceLines.Add(AllHalfMembers[joint.HalfMemberIndices[i]].HalfMemberLine);
+            }
+
+            for (int i = 0; i < joint.ExternalForceIndices.Count; i++)
+            {
+                knownForceLines.Add(AllExternalForces[joint.ExternalForceIndices[i]].ForceLine);
+            }
+
+            for (int i = 0; i < joint.SupportReactionIndices.Count; i++)
+            {
+                knownForceLines.Add(AllSupportReactions[joint.SupportReactionIndices[i]].ForceLine);
+            }
+
+            oKnownForceLines = knownForceLines;
+            oUnknownForceLines = unknownForceLines;
+            oKnownForceLinesForAngles = knownForceLines;
+        }
+
+        public void SetFormLinesOrder(List<Line> iKnownForceLinesForAngles, List<Line> iUnknownForceLines, ref List<int> oKnownForceLinesOrder, ref List<int> oUnknownForceLinesOrder)
+        {
+            List<double> myAnglesKnownLines = new List<double>();
+            List<double> myAnglesUnknownLines = new List<double>();
+            oKnownForceLinesOrder = new List<int>(new int[iKnownForceLinesForAngles.Count]);
+            oUnknownForceLinesOrder = new List<int>(new int[iUnknownForceLines.Count]);
+
+            Plane planeXY = new Plane(new Point3d(0, 0, 0), new Vector3d(0, 0, 1));
+            Vector3d positiveY = new Vector3d(0, 1, 0);
+
+            for (int i = 0; i < iKnownForceLinesForAngles.Count; i++)
+            {
+                myAnglesKnownLines.Add(Vector3d.VectorAngle(positiveY, iKnownForceLinesForAngles[i].Direction, planeXY));
+            }
+
+            for (int i = 0; i < iUnknownForceLines.Count; i++)
+            {
+                myAnglesUnknownLines.Add(Vector3d.VectorAngle(positiveY, iUnknownForceLines[i].Direction, planeXY));
+            }
+
+            for (int i = 0; i < (iUnknownForceLines.Count + iKnownForceLinesForAngles.Count); i++)
+            {
+                if (myAnglesKnownLines.Min() < myAnglesUnknownLines.Min())
+                {
+                    int _1 = myAnglesKnownLines.IndexOf(myAnglesKnownLines.Min());
+                    oKnownForceLinesOrder[_1] = i;
+                    myAnglesKnownLines[_1] = 400;
+                }
+                else
+                {
+                    int _1 = myAnglesUnknownLines.IndexOf(myAnglesUnknownLines.Min());
+                    oUnknownForceLinesOrder[_1] = i;
+                    myAnglesUnknownLines[_1] = 400;
+                }
+            }
+        }
+
+        public void SolveForceDiagramJointBased()
+        {
+            List<Line> myKnownForceLines = new List<Line>();
+            List<Line> myKnownForceLinesForAngles = new List<Line>();
+            List<int> myKnownForceLinesOrder = new List<int>();
+            List<Line> myUnkownForceLines = new List<Line>();
+            List<int> myUnkownForceLinesOrder = new List<int>();
+
+            for (int i = 0; i < AllJoints.Count; i++)
+            {
+                if(AllJoints[i].JointSolved == false)
+                {
+                    AllJoints[i].KnownsUnknowns(AllMembers);
+                    if(AllJoints[i].Knowns != 0)
+                    {
+                        if (AllJoints[i].Unknowns == 2)
+                        {
+                            KnownUnknownLines(AllJoints[i], ref myKnownForceLines, ref myUnkownForceLines, ref myKnownForceLinesForAngles);
+                            SetFormLinesOrder(myKnownForceLinesForAngles, myUnkownForceLines, ref myKnownForceLinesOrder, ref myUnkownForceLinesOrder);
+                        }
+
+                        else if (AllJoints[i].Unknowns == 1)
+                        {
+                            KnownUnknownLines(AllJoints[i], ref myKnownForceLines, ref myUnkownForceLines, ref myKnownForceLinesForAngles);
+                            SetFormLinesOrder(myKnownForceLinesForAngles, myUnkownForceLines, ref myKnownForceLinesOrder, ref myUnkownForceLinesOrder);
+                        }
+
+                        else
+                            break;
+                    }
+                }
+            }
+        }
+
+        public void SolveSingleUnknownJoint()
+        {
+            
+        }
 
         public void SolveForceDiagram()
         {
-            Functions functions = new Functions();
-
             int unknowns;
             int knowns;
 
@@ -56,7 +164,7 @@ namespace GHPlugin
             List<Boolean> myPostiveForces;
             Point3d myMiddlePoint;
 
-            for (int i = 0; i < AllJoints.Count; i++)
+            for (int i = 0; i < AllPoints.Count; i++)
             {
                 unknowns = 0;
                 knowns = 0;
@@ -73,37 +181,37 @@ namespace GHPlugin
                 Line knownForceLineForAngle;
                 Line forceLineTemp;
 
-                for (int j = 0; j < allHalfMembers.Count; j++)
-                    if (i == allHalfMembers[j].JointIndex)
+                for (int j = 0; j < AllHalfMembers.Count; j++)
+                    if (i == AllHalfMembers[j].JointIndex)
                     {
-                        if (AllMembers[allHalfMembers[j].MemberIndex].Known == false)
+                        if (AllMembers[AllHalfMembers[j].MemberIndex].Known == false)
                         {
                             unknowns += 1;
                             halfMemberIndices.Add(unknownForceLines.Count);
                             correspondingHalfMemberIndices.Add(j);
-                            unknownForceLines.Add(allHalfMembers[j].HalfMemberLine);
-                            unknownForceLinesForAngle.Add(allHalfMembers[j].HalfMemberLine);
+                            unknownForceLines.Add(AllHalfMembers[j].HalfMemberLine);
+                            unknownForceLinesForAngle.Add(AllHalfMembers[j].HalfMemberLine);
                         }
                         else
                         {
                             knowns += 1;
-                            forceLineTemp = AllMembers[allHalfMembers[j].MemberIndex].ForceLine;
+                            forceLineTemp = AllMembers[AllHalfMembers[j].MemberIndex].ForceLine;
 
-                            if (Vector3d.Multiply(forceLineTemp.Direction, allHalfMembers[j].HalfMemberLine.Direction) > 0.0)
+                            if (Vector3d.Multiply(forceLineTemp.Direction, AllHalfMembers[j].HalfMemberLine.Direction) > 0.0)
                             {
-                                if (AllMembers[allHalfMembers[j].MemberIndex].PositiveForce == true)
+                                if (AllMembers[AllHalfMembers[j].MemberIndex].PositiveForce == true)
                                     forceLineTemp.Flip();
                             }
                             else
                             {
-                                if (AllMembers[allHalfMembers[j].MemberIndex].PositiveForce == false)
+                                if (AllMembers[AllHalfMembers[j].MemberIndex].PositiveForce == false)
                                     forceLineTemp.Flip();
                             }
                             knownForceLines.Add(forceLineTemp);
-                            knownForceLinesForAngles.Add(allHalfMembers[j].HalfMemberLine);
+                            knownForceLinesForAngles.Add(AllHalfMembers[j].HalfMemberLine);
                         }
                     }
-
+                
                 for (int j = 0; j < AllSupportReactions.Count; j++)
                     if (i == AllSupportReactions[j].JointIndex)
                     {
@@ -122,7 +230,7 @@ namespace GHPlugin
                             knownForceLinesForAngles.Add(AllSupportReactions[j].ForceLineForAngle);
                         }
                     }
-
+                
                 for (int j = 0; j < AllExternalForces.Count; j++)
                 {
                     if (i == AllExternalForces[j].JointIndex)
@@ -139,7 +247,7 @@ namespace GHPlugin
                     if (knowns > 1)
                     {
                         //startpoint (here dummypoint) for ResultantSimple gets overruled if knownForceLines.Count == 2, which should be the case here.
-                        ResultantSimple myResultantSimple = new ResultantSimple(dummyPoint, knownForceLines, knownForceLinesForAngles, unknownForceLinesForAngle);
+                        ResultantSimple myResultantSimple = new ResultantSimple(DummyPoint, knownForceLines, knownForceLinesForAngles, unknownForceLinesForAngle);
                         if (myResultantSimple.Valid == false)
                             break;
                         else
@@ -150,17 +258,17 @@ namespace GHPlugin
                         knownForceLine = knownForceLines[0];
 
                     knownForceLineForAngle = knownForceLinesForAngles[0];
-                    functions.FindAngles(knownForceLineForAngle, unknownForceLinesForAngle, unknownForceLines, out myAngles, out myUnkownVectors);
-                    bool valid = functions.ThreeForceJoint(myAngles, knownForceLine, myUnkownVectors, out unknownForceLines, out myPostiveForces, out myMiddlePoint);
+                    MyFunctions.FindAngles(knownForceLineForAngle, unknownForceLinesForAngle, unknownForceLines, out myAngles, out myUnkownVectors);
+                    bool valid = MyFunctions.ThreeForceJoint(myAngles, knownForceLine, myUnkownVectors, out unknownForceLines, out myPostiveForces, out myMiddlePoint);
 
                     if (valid)
                     {
                         for (int j = 0; j < halfMemberIndices.Count; j++)
                         {
-                            AllMembers[allHalfMembers[correspondingHalfMemberIndices[j]].MemberIndex].ForceLine = unknownForceLines[halfMemberIndices[j]];
-                            AllMembers[allHalfMembers[correspondingHalfMemberIndices[j]].MemberIndex].Force = unknownForceLines[halfMemberIndices[j]].Length;
-                            AllMembers[allHalfMembers[correspondingHalfMemberIndices[j]].MemberIndex].PositiveForce = myPostiveForces[halfMemberIndices[j]];
-                            AllMembers[allHalfMembers[correspondingHalfMemberIndices[j]].MemberIndex].Known = true;
+                            AllMembers[AllHalfMembers[correspondingHalfMemberIndices[j]].MemberIndex].ForceLine = unknownForceLines[halfMemberIndices[j]];
+                            AllMembers[AllHalfMembers[correspondingHalfMemberIndices[j]].MemberIndex].Force = unknownForceLines[halfMemberIndices[j]].Length;
+                            AllMembers[AllHalfMembers[correspondingHalfMemberIndices[j]].MemberIndex].PositiveForce = myPostiveForces[halfMemberIndices[j]];
+                            AllMembers[AllHalfMembers[correspondingHalfMemberIndices[j]].MemberIndex].Known = true;
                         }
 
                         for (int j = 0; j < supportIndices.Count; j++)

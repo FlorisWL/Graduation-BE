@@ -17,6 +17,7 @@ namespace GHPlugin
         public Line FormLine;
         public Line FormLineForAngle;
         public Line ForceLine;
+        public Line ForceLineJoint;
         public Line ForceLineForAngle;
         public double Force = 0.0;
         public Boolean PositiveForce = true;

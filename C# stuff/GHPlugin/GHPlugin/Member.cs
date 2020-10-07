@@ -15,6 +15,7 @@ namespace GHPlugin
         public int EndJointIndex;
         public Point3d MiddlePoint;
         public Line ForceLine;
+        public Line ForceLineJoint;
         public Double Force = 0.0;
         public Boolean PositiveForce = true;
         public Boolean Known = false;

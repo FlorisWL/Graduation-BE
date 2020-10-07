@@ -17,6 +17,9 @@ namespace GHPlugin
         public Line FormLine;
         public Line ForceLineForAngle;
         public Line ForceLine;
+        public Line ForceLineJoint;
+
+
 
         public ExternalForce(int jointIndex, List<Point3d> joints, Vector3d forceVector)
         {
