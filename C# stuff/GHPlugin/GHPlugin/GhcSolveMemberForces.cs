@@ -134,7 +134,10 @@ namespace GHPlugin
 
             for (int i = 0; i < allMembers.Count; i++)
             {
-                oMemberLinesForce.Add(allMembers[i].ForceLine);
+                //oMemberLinesForce.Add(allMembers[i].ForceLine);
+                oMemberLinesForce.Add(allMembers[i].ForceLineJoint1);
+                oMemberLinesForce.Add(allMembers[i].ForceLineJoint2);
+
                 if (allMembers[i].PositiveForce == false)
                     oMemberColors.Add(Color.FromArgb(122, Color.FromName("Blue")));
                 else
@@ -142,9 +145,12 @@ namespace GHPlugin
             }
 
             oSupportLinesForm = iSupportLinesForm;
-            oSupportLinesForce = iSupportLinesForce;
+            for (int i = 0; i < allSupports.Count; i++)
+                oSupportLinesForce.Add(allSupports[i].ForceLineJoint);
+
             oExtForceLinesForm = iExtForceLinesForm;
-            oExtForceLinesForce = iExtForceLinesForce;
+            for (int i = 0; i < allExternalForces.Count; i++)
+                oExtForceLinesForce.Add(allExternalForces[i].ForceLineJoint);
 
 
             DA.SetDataList(0, oSupportLinesForm);

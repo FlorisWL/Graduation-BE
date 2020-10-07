@@ -85,6 +85,9 @@ namespace GHPlugin
             {
                 knowns++;
             }
+
+            Knowns = knowns;
+            Unknowns = unknowns;
         }
 
     }
