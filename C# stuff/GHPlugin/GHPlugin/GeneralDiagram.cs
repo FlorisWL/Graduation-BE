@@ -47,6 +47,8 @@ namespace GHPlugin
             List<Line> knownForceLines = new List<Line>();
             List<Line> unknownForceLines = new List<Line>();
 
+            Line flippedForceLineJoint;
+
             List<int> indexKnownMembers = new List<int>();
             List<int> indexKnownMembersCorresponding = new List<int>();
             List<int> indexUnknownMembers = new List<int>();
@@ -66,13 +68,14 @@ namespace GHPlugin
                 {
                     indexKnownMembers.Add(joint.MemberIndices[i]);
                     indexKnownMembersCorresponding.Add(knownForceLines.Count);
-                    knownForceLines.Add(AllMembers[joint.MemberIndices[i]].ForceLine);
+                    flippedForceLineJoint = AllMembers[joint.MemberIndices[i]].ForceLineJoint1; flippedForceLineJoint.Flip();
+                    knownForceLines.Add(flippedForceLineJoint);
                     distribution[0]++;
                 }
 
                 else
                 {
-                    indexUnknownMembers.Add(joint.HalfMemberIndices[i]);
+                    indexUnknownMembers.Add(joint.MemberIndices[i]);
                     indexUnknownMembersCorresponding.Add(unknownForceLines.Count);
                     unknownForceLines.Add(AllHalfMembers[joint.HalfMemberIndices[i]].HalfMemberLine);
                     distribution[3]++;
@@ -144,7 +147,13 @@ namespace GHPlugin
 
             for (int i = 0; i < (iUnknownForceLines.Count + iKnownForceLinesForAngles.Count); i++)
             {
-                if (myAnglesKnownLines.Min() < myAnglesUnknownLines.Min())
+                if (myAnglesUnknownLines.Count == 0)
+                {
+                    int _1 = myAnglesKnownLines.IndexOf(myAnglesKnownLines.Min());
+                    oKnownForceLinesOrder[_1] = i;
+                    myAnglesKnownLines[_1] = 400;
+                }
+                else if (myAnglesKnownLines.Min() < myAnglesUnknownLines.Min())
                 {
                     int _1 = myAnglesKnownLines.IndexOf(myAnglesKnownLines.Min());
                     oKnownForceLinesOrder[_1] = i;
@@ -178,7 +187,7 @@ namespace GHPlugin
             {
                 oSolvedUnknownForceLines.Add(new Line(startPoint, OGstartPoint));
             }
-            else
+            else if (iUnknownForceLines.Count == 2)
             {
                 oSolvedUnknownForceLines.Add(new Line(startPoint, iUnknownForceLines[0].Direction));
                 oSolvedUnknownForceLines.Add(new Line(OGstartPoint, iUnknownForceLines[1].Direction));
@@ -215,75 +224,73 @@ namespace GHPlugin
 
             for (int i = 0; i < AllJoints.Count; i++)
             {
+                if(i == 4)
+                {
+                    int test = 1;
+                }
                 if(AllJoints[i].JointSolved == false)
                 {
                     AllJoints[i].KnownsUnknowns(AllMembers);
-                    if(AllJoints[i].Knowns != 0)
+                    if ((AllJoints[i].Unknowns < 3) && (AllJoints[i].Unknowns > -1))
                     {
-                        if ((AllJoints[i].Unknowns < 3) && (AllJoints[i].Unknowns > 0))
+                        indexKnownMembers = new List<int>();
+                        indexKnownMembersCorresponding = new List<int>();
+                        indexUnknownMembers = new List<int>();
+                        indexUnknownMembersCorresponding = new List<int>();
+                        indexSupports = new List<int>();
+                        indexSupportsCorresponding = new List<int>();
+                        indexExtForces = new List<int>();
+                        indexExtForcesCorresponding = new List<int>();
+
+                        List<int> myDistribtution = KnownUnknownLines(AllJoints[i], ref myKnownForceLines, ref myUnknownForceLines, ref myKnownForceLinesForAngles, ref myIndices, ref myCorrespondingIndices);
+                        SetFormLinesOrder(myKnownForceLinesForAngles, myUnknownForceLines, ref myKnownForceLinesOrder, ref myUnkownForceLinesOrder);
+                        CalculateFormDiagramJoint(myKnownForceLines, myUnknownForceLines, AllJoints[i], ref mySolvedKnownForceLines, ref mySolvedUnknownForceLines);
+
+                        for (int j = 0; j < myIndices.Count; j++)
                         {
-                            indexKnownMembers = new List<int>();
-                            indexKnownMembersCorresponding = new List<int>();
-                            indexUnknownMembers = new List<int>();
-                            indexUnknownMembersCorresponding = new List<int>();
-                            indexSupports = new List<int>();
-                            indexSupportsCorresponding = new List<int>();
-                            indexExtForces = new List<int>();
-                            indexExtForcesCorresponding = new List<int>();
-
-                            List<int> myDistribtution = KnownUnknownLines(AllJoints[i], ref myKnownForceLines, ref myUnknownForceLines, ref myKnownForceLinesForAngles, ref myIndices, ref myCorrespondingIndices);
-                            SetFormLinesOrder(myKnownForceLinesForAngles, myUnknownForceLines, ref myKnownForceLinesOrder, ref myUnkownForceLinesOrder);
-                            CalculateFormDiagramJoint(myKnownForceLines, myUnknownForceLines, AllJoints[i], ref mySolvedKnownForceLines, ref mySolvedUnknownForceLines);
-
-                            for (int j = 0; j < myIndices.Count; j++)
+                            if (j < myDistribtution[0])
                             {
-                                if (j < myDistribtution[0])
-                                {
-                                    indexKnownMembers.Add(myIndices[j]);
-                                    indexKnownMembersCorresponding.Add(myCorrespondingIndices[j]);
-                                }
-                                else if (j < myDistribtution[1] + myDistribtution[0])
-                                {
-                                    indexSupports.Add(myIndices[j]);
-                                    indexSupportsCorresponding.Add(myCorrespondingIndices[j]);
-                                }
-                                else if (j < myDistribtution[2] + myDistribtution[1] + myDistribtution[0])
-                                {
-                                    indexExtForces.Add(myIndices[j]);
-                                    indexExtForcesCorresponding.Add(myCorrespondingIndices[j]);
-                                }
-                                else
-                                {
-                                    indexUnknownMembers.Add(myIndices[j]);
-                                    indexUnknownMembersCorresponding.Add(myCorrespondingIndices[j]);
-                                }
+                                indexKnownMembers.Add(myIndices[j]);
+                                indexKnownMembersCorresponding.Add(myCorrespondingIndices[j]);
                             }
-
-                            for (int j = 0; j < indexUnknownMembers.Count; j++)
+                            else if (j < myDistribtution[1] + myDistribtution[0])
                             {
-                                AllMembers[indexUnknownMembers[j]].ForceLineJoint1 = mySolvedUnknownForceLines[indexUnknownMembersCorresponding[j]];
-                                AllMembers[indexUnknownMembers[j]].Known = true;
-                                AllMembers[indexUnknownMembers[j]].Force = AllMembers[indexUnknownMembers[j]].ForceLineJoint1.Length;
-                                if (Vector3d.Multiply(myUnknownForceLines[indexUnknownMembersCorresponding[j]].Direction, mySolvedUnknownForceLines[indexUnknownMembersCorresponding[j]].Direction) > 0.0)
-                                    AllMembers[indexUnknownMembers[j]].PositiveForce = false;
-                                else
-                                    AllMembers[indexUnknownMembers[j]].PositiveForce = true;
+                                indexSupports.Add(myIndices[j]);
+                                indexSupportsCorresponding.Add(myCorrespondingIndices[j]);
                             }
-
-                            for (int j = 0; j < indexKnownMembers.Count; j++)
-                                AllMembers[indexKnownMembers[j]].ForceLineJoint2 = mySolvedKnownForceLines[indexKnownMembersCorresponding[j]];
-
-                            for (int j = 0; j < indexSupports.Count; j++)
-                                AllSupportReactions[indexSupports[j]].ForceLineJoint = mySolvedKnownForceLines[indexSupportsCorresponding[j]];
-
-                            for (int j = 0; j < indexExtForces.Count; j++)
-                                AllExternalForces[indexExtForces[j]].ForceLineJoint = mySolvedKnownForceLines[indexExtForcesCorresponding[j]];
-
-                            AllJoints[i].JointSolved = true;
+                            else if (j < myDistribtution[2] + myDistribtution[1] + myDistribtution[0])
+                            {
+                                indexExtForces.Add(myIndices[j]);
+                                indexExtForcesCorresponding.Add(myCorrespondingIndices[j]);
+                            }
+                            else
+                            {
+                                indexUnknownMembers.Add(myIndices[j]);
+                                indexUnknownMembersCorresponding.Add(myCorrespondingIndices[j]);
+                            }
                         }
 
-                        else
-                            break;
+                        for (int j = 0; j < indexUnknownMembers.Count; j++)
+                        {
+                            AllMembers[indexUnknownMembers[j]].ForceLineJoint1 = mySolvedUnknownForceLines[indexUnknownMembersCorresponding[j]];
+                            AllMembers[indexUnknownMembers[j]].Known = true;
+                            AllMembers[indexUnknownMembers[j]].Force = AllMembers[indexUnknownMembers[j]].ForceLineJoint1.Length;
+                            if (Vector3d.Multiply(myUnknownForceLines[indexUnknownMembersCorresponding[j]].Direction, mySolvedUnknownForceLines[indexUnknownMembersCorresponding[j]].Direction) > 0.0)
+                                AllMembers[indexUnknownMembers[j]].PositiveForce = false;
+                            else
+                                AllMembers[indexUnknownMembers[j]].PositiveForce = true;
+                        }
+
+                        for (int j = 0; j < indexKnownMembers.Count; j++)
+                            AllMembers[indexKnownMembers[j]].ForceLineJoint2 = mySolvedKnownForceLines[indexKnownMembersCorresponding[j]];
+
+                        for (int j = 0; j < indexSupports.Count; j++)
+                            AllSupportReactions[indexSupports[j]].ForceLineJoint = mySolvedKnownForceLines[indexSupportsCorresponding[j]];
+
+                        for (int j = 0; j < indexExtForces.Count; j++)
+                            AllExternalForces[indexExtForces[j]].ForceLineJoint = mySolvedKnownForceLines[indexExtForcesCorresponding[j]];
+
+                        AllJoints[i].JointSolved = true;
                     }
                 }
             }
