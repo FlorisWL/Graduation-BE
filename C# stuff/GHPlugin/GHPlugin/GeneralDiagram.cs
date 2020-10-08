@@ -46,6 +46,7 @@ namespace GHPlugin
         {
             List<Line> knownForceLines = new List<Line>();
             List<Line> unknownForceLines = new List<Line>();
+            List<Line> knownForceLinesForAngles = new List<Line>();
 
             Line flippedForceLineJoint;
 
@@ -70,6 +71,7 @@ namespace GHPlugin
                     indexKnownMembersCorresponding.Add(knownForceLines.Count);
                     flippedForceLineJoint = AllMembers[joint.MemberIndices[i]].ForceLineJoint1; flippedForceLineJoint.Flip();
                     knownForceLines.Add(flippedForceLineJoint);
+                    knownForceLinesForAngles.Add(AllHalfMembers[joint.HalfMemberIndices[i]].HalfMemberLine);
                     distribution[0]++;
                 }
 
@@ -87,6 +89,7 @@ namespace GHPlugin
                 indexSupports.Add(joint.ExternalForceIndices[i]);
                 indexSupportsCorresponding.Add(knownForceLines.Count);
                 knownForceLines.Add(AllExternalForces[joint.ExternalForceIndices[i]].ForceLine);
+                knownForceLinesForAngles.Add(AllExternalForces[joint.ExternalForceIndices[i]].ForceLine);
                 distribution[2]++;
             }
 
@@ -95,6 +98,7 @@ namespace GHPlugin
                 indexExtForces.Add(joint.SupportReactionIndices[i]);
                 indexExtForcesCorresponding.Add(knownForceLines.Count);
                 knownForceLines.Add(AllSupportReactions[joint.SupportReactionIndices[i]].ForceLine);
+                knownForceLinesForAngles.Add(AllSupportReactions[joint.SupportReactionIndices[i]].ForceLine);
                 distribution[1]++;
             }
 
@@ -120,7 +124,7 @@ namespace GHPlugin
 
             oKnownForceLines = knownForceLines;
             oUnknownForceLines = unknownForceLines;
-            oKnownForceLinesForAngles = knownForceLines;
+            oKnownForceLinesForAngles = knownForceLinesForAngles;
 
             return distribution;
         }
@@ -132,7 +136,7 @@ namespace GHPlugin
             oKnownForceLinesOrder = new List<int>(new int[iKnownForceLinesForAngles.Count]);
             oUnknownForceLinesOrder = new List<int>(new int[iUnknownForceLines.Count]);
 
-            Plane planeXY = new Plane(new Point3d(0, 0, 0), new Vector3d(0, 0, 1));
+            Plane planeXY = new Plane(new Point3d(0, 0, 0), new Vector3d(0, 0, -1));
             Vector3d positiveY = new Vector3d(0, 1, 0);
 
             for (int i = 0; i < iKnownForceLinesForAngles.Count; i++)
@@ -201,6 +205,50 @@ namespace GHPlugin
             }
         }
 
+        public void SetInRightOrder(List<int> iKnownForceLinesOrder, List<int> iUnknownForceLinesOrder, ref List<Line> oKnownForceLines, ref List<Line> oUnknownForceLines, Joint iJoint)
+        {
+            //List<Line> newKnownForceLines = new List<Line>();
+            //List<Line> newUnknownForceLines = new List<Line>();
+            Line newLine;
+            bool myBreak;
+            Point3d startPoint = iJoint.InitSolveLocation;
+
+            for (int j = 0; j < (iKnownForceLinesOrder.Count + iUnknownForceLinesOrder.Count); j++)
+            {
+                myBreak = false;
+
+                for (int i = 0; i < (iKnownForceLinesOrder.Count); i++)
+                {
+                    if (j == iKnownForceLinesOrder[i])
+                    {
+                        newLine = new Line(startPoint, oKnownForceLines[i].Direction);
+                        oKnownForceLines[i] = newLine;
+                        startPoint = newLine.To;
+
+                        myBreak = true;
+                        break;
+                    }
+                }
+
+                for (int i = 0; i < (iUnknownForceLinesOrder.Count); i++)
+                {
+                    if (myBreak) break;
+
+                    if (j == iUnknownForceLinesOrder[i])
+                    {
+                        newLine = new Line(startPoint, oUnknownForceLines[i].Direction);
+                        oUnknownForceLines[i] = newLine;
+                        startPoint = newLine.To;
+
+                        break;
+                    }
+                }
+            }
+                
+            //oKnownForceLines = newKnownForceLines;
+            //oUnknownForceLines = newUnknownForceLines;
+        }
+
         public void SolveForceDiagramJointBased()
         {
             List<Line> myKnownForceLines = new List<Line>();
@@ -245,6 +293,7 @@ namespace GHPlugin
                         List<int> myDistribtution = KnownUnknownLines(AllJoints[i], ref myKnownForceLines, ref myUnknownForceLines, ref myKnownForceLinesForAngles, ref myIndices, ref myCorrespondingIndices);
                         SetFormLinesOrder(myKnownForceLinesForAngles, myUnknownForceLines, ref myKnownForceLinesOrder, ref myUnkownForceLinesOrder);
                         CalculateFormDiagramJoint(myKnownForceLines, myUnknownForceLines, AllJoints[i], ref mySolvedKnownForceLines, ref mySolvedUnknownForceLines);
+                        SetInRightOrder(myKnownForceLinesOrder, myUnkownForceLinesOrder, ref mySolvedKnownForceLines, ref mySolvedUnknownForceLines, AllJoints[i]);
 
                         for (int j = 0; j < myIndices.Count; j++)
                         {
