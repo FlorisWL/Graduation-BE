@@ -50,9 +50,14 @@ namespace GHPlugin
             pManager.AddLineParameter("External Forces Form", "Ext. Forces Form", "The lines of the external forces in the form diagram!", GH_ParamAccess.list);
             pManager.AddLineParameter("Members Form", "Members Form", "The lines of the members in the form diagram!", GH_ParamAccess.list);
 
-            pManager.AddLineParameter("Supports Force", "Supports Force", "The lines of the supports reactions in the force diagram!", GH_ParamAccess.list);
-            pManager.AddLineParameter("External Forces Force", "Ext. Forces Force", "The lines of the external forces in the force diagram!", GH_ParamAccess.list);
-            pManager.AddLineParameter("Members Force", "Members Force", "The lines of the members in the global force diagram!", GH_ParamAccess.list);
+            pManager.AddLineParameter("Supports Force Joints", "Supports Force Joints", "The lines of the supports reactions in the force diagram per joint!", GH_ParamAccess.list);
+            pManager.AddLineParameter("External Forces Force Joints", "Ext. Forces Force Joints", "The lines of the external forces in the force diagram per joint!", GH_ParamAccess.list);
+            pManager.AddLineParameter("Members Force Joints", "Members Force Joints", "The lines of the members in the global force diagram per joint!", GH_ParamAccess.list);
+
+            pManager.AddLineParameter("Supports Force", "Supports Force", "The lines of the supports reactions in the overall force diagram", GH_ParamAccess.list);
+            pManager.AddLineParameter("External Forces Force", "Ext. Forces Force", "The lines of the external forces in the overall force diagram!", GH_ParamAccess.list);
+            pManager.AddLineParameter("Members Force", "Members Force", "The lines of the members in the global overall force diagram!", GH_ParamAccess.list);
+
 
             pManager.AddBrepParameter("Members unified diagram", "Members unified diagram", "Member geometry to display for the unified diagram", GH_ParamAccess.list);
             pManager.AddColourParameter("Colour Global Members", "Colour Global Members", "The colours of global members: blue for compression, red for tension!", GH_ParamAccess.list);
@@ -83,6 +88,9 @@ namespace GHPlugin
             List<Line> oSupportLinesForm = new List<Line>();
             List<Line> oExtForceLinesForm = new List<Line>();
             List<Line> oMemberLinesForm = new List<Line>();
+            List<Line> oSupportLinesForceJoint = new List<Line>();
+            List<Line> oExtForceLinesForceJoint = new List<Line>();
+            List<Line> oMemberLinesForceJoint = new List<Line>();
             List<Line> oSupportLinesForce = new List<Line>();
             List<Line> oExtForceLinesForce = new List<Line>();
             List<Line> oMemberLinesForce = new List<Line>();
@@ -135,8 +143,9 @@ namespace GHPlugin
             for (int i = 0; i < allMembers.Count; i++)
             {
                 //oMemberLinesForce.Add(allMembers[i].ForceLine);
-                oMemberLinesForce.Add(allMembers[i].ForceLineJoint1);
-                oMemberLinesForce.Add(allMembers[i].ForceLineJoint2);
+                //oMemberLinesForceJoint.Add(allMembers[i].ForceLineJoint1);
+                //oMemberLinesForceJoint.Add(allMembers[i].ForceLineJoint2);
+                oForceMagnitudes.Add(allMembers[i].Force);
 
                 if (allMembers[i].PositiveForce == false)
                     oMemberColors.Add(Color.FromArgb(122, Color.FromName("Blue")));
@@ -144,25 +153,51 @@ namespace GHPlugin
                     oMemberColors.Add(Color.FromArgb(122, Color.FromName("Red")));
             }
 
+            oMemberLinesForceJoint = myGeneralDiagram.ForceLinesJoint();
+
+            myGeneralDiagram.CreateOverallForceDiagram();
+
+            for (int i = 0; i < allMembers.Count; i++)
+            {
+                oMemberLinesForce.Add(allMembers[i].ForceLine);
+            }
+
+            double myScalingFactor = 1.0 / 9.0;
+
+            if (iDisplayOption == 1)
+            {
+                functions.DisplayRectangles(allMembers, myScalingFactor, out oDisplayBreps);
+            }
+
             oSupportLinesForm = iSupportLinesForm;
             for (int i = 0; i < allSupports.Count; i++)
-                oSupportLinesForce.Add(allSupports[i].ForceLineJoint);
+            {
+                oForceMagnitudes.Add(allSupports[i].Force);
+                oSupportLinesForceJoint.Add(allSupports[i].ForceLineJoint);
+                oSupportLinesForce.Add(allSupports[i].ForceLine);
+            }
 
             oExtForceLinesForm = iExtForceLinesForm;
             for (int i = 0; i < allExternalForces.Count; i++)
-                oExtForceLinesForce.Add(allExternalForces[i].ForceLineJoint);
-
+            {
+                oForceMagnitudes.Add(allExternalForces[i].Force);
+                oExtForceLinesForceJoint.Add(allExternalForces[i].ForceLineJoint);
+                oExtForceLinesForce.Add(allExternalForces[i].ForceLine);
+            }
 
             DA.SetDataList(0, oSupportLinesForm);
             DA.SetDataList(1, oExtForceLinesForm);
             DA.SetDataList(2, oMemberLinesForm);
-            DA.SetDataList(3, oSupportLinesForce);
-            DA.SetDataList(4, oExtForceLinesForce);
-            DA.SetDataList(5, oMemberLinesForce);
-            DA.SetDataList(6, oDisplayBreps);
-            DA.SetDataList(7, oMemberColors);
-            DA.SetDataList(8, oForceMagnitudes);
-            DA.SetDataList(9, oLocationsForceTextTags);
+            DA.SetDataList(3, oSupportLinesForceJoint);
+            DA.SetDataList(4, oExtForceLinesForceJoint);
+            DA.SetDataList(5, oMemberLinesForceJoint);
+            DA.SetDataList(6, oSupportLinesForce);
+            DA.SetDataList(7, oExtForceLinesForce);
+            DA.SetDataList(8, oMemberLinesForce);
+            DA.SetDataList(9, oDisplayBreps);
+            DA.SetDataList(10, oMemberColors);
+            DA.SetDataList(11, oForceMagnitudes);
+            DA.SetDataList(12, oLocationsForceTextTags);
         }
 
         /// <summary>

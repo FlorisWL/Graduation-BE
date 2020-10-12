@@ -62,7 +62,37 @@ namespace GHPlugin
 
         }
 
-        
+        public void SetExternalForcesForAngle(List<HalfMember> iHalfMembers, List<ExternalForce> iExternalForces)
+        {
+            if(ExternalForceIndices.Count > 0)
+            {
+                Plane planeXY = new Plane(new Point3d(0, 0, 0), new Vector3d(0, 0, -1));
+                List<double> anglesBetweenMembers = new List<double>();
+                double minAngle;
+                double tempAngle;
+
+                for (int i = 0; i < HalfMemberIndices.Count; i++)
+                {
+                    minAngle = 360;
+                    for (int j = 0; j < HalfMemberIndices.Count; j++)
+                        if (i != j)
+                        {
+                            tempAngle = Vector3d.VectorAngle(iHalfMembers[i].HalfMemberLine.Direction, iHalfMembers[i].HalfMemberLine.Direction, planeXY);
+                            if (tempAngle < minAngle) minAngle = tempAngle;
+                        }
+                    anglesBetweenMembers.Add(minAngle);
+                }
+                double _1 = anglesBetweenMembers.Max();
+                int indexMaxAngle = anglesBetweenMembers.IndexOf(_1);
+                Line newLine = iHalfMembers[indexMaxAngle].HalfMemberLine;
+                Transform rotationTransformation = Transform.Rotation(_1 * 0.5, newLine.To);
+                newLine.Transform(rotationTransformation);
+
+                for (int i = 0; i < ExternalForceIndices.Count; i++)
+                    iExternalForces[ExternalForceIndices[i]].ForceLineForAngle = newLine;
+            }
+            
+        }
 
         public void KnownsUnknowns(List<Member> allMembers)
         {

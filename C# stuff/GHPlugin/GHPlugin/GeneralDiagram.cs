@@ -18,6 +18,7 @@ namespace GHPlugin
         public List<Point3d> AllPoints;
         public List<Joint> AllJoints = new List<Joint>();
         public Point3d DummyPoint = new Point3d(0,0,0);
+        public bool FirstForceLineDefined = false;
         public Functions MyFunctions = new Functions();
 
         public GeneralDiagram(
@@ -29,10 +30,14 @@ namespace GHPlugin
             AllMembers = allMembers;
             AllPoints = allPoints;
 
+            DummyPoint = allExternalForces[0].ForceLine.From;
+
             for (int i = 0; i < allMembers.Count; i++)
             {
                 AllHalfMembers.Add(new HalfMember(i, allMembers[i], true, AllPoints));
+                AllHalfMembers[AllHalfMembers.Count - 1].OtherHalfMemberIndex = (2 * i + 1);
                 AllHalfMembers.Add(new HalfMember(i, allMembers[i], false, AllPoints));
+                AllHalfMembers[AllHalfMembers.Count - 1].OtherHalfMemberIndex = (2 * i);
             }
 
             for (int i = 0; i < allPoints.Count; i++)
@@ -40,6 +45,9 @@ namespace GHPlugin
                 AllJoints.Add(new Joint(i, allPoints));
                 AllJoints[i].FillJoint(AllHalfMembers, AllExternalForces, allSupportReactions);
             }
+
+            for (int i = 0; i < AllJoints.Count; i++)
+                AllJoints[i].SetExternalForcesForAngle(AllHalfMembers, AllExternalForces);
         }
 
         public List<int> KnownUnknownLines(Joint joint, ref List<Line> oKnownForceLines, ref List<Line> oUnknownForceLines, ref List<Line> oKnownForceLinesForAngles, ref List<int> oIndices, ref List<int> oCorrespondingIndices)
@@ -50,10 +58,10 @@ namespace GHPlugin
 
             Line flippedForceLineJoint;
 
-            List<int> indexKnownMembers = new List<int>();
-            List<int> indexKnownMembersCorresponding = new List<int>();
-            List<int> indexUnknownMembers = new List<int>();
-            List<int> indexUnknownMembersCorresponding = new List<int>();
+            List<int> indexKnownHalfMembers = new List<int>();
+            List<int> indexKnownHalfMembersCorresponding = new List<int>();
+            List<int> indexUnknownHalfMembers = new List<int>();
+            List<int> indexUnknownHalfMembersCorresponding = new List<int>();
             List<int> indexSupports = new List<int>();
             List<int> indexSupportsCorresponding = new List<int>();
             List<int> indexExtForces = new List<int>();
@@ -63,13 +71,13 @@ namespace GHPlugin
             for (int i = 0; i < 4; i++)
                 distribution.Add(0);
 
-            for (int i = 0; i < joint.MemberIndices.Count; i++)
+            for (int i = 0; i < joint.HalfMemberIndices.Count; i++)
             {
                 if (AllMembers[joint.MemberIndices[i]].Known)
                 {
-                    indexKnownMembers.Add(joint.MemberIndices[i]);
-                    indexKnownMembersCorresponding.Add(knownForceLines.Count);
-                    flippedForceLineJoint = AllMembers[joint.MemberIndices[i]].ForceLineJoint1; flippedForceLineJoint.Flip();
+                    indexKnownHalfMembers.Add(joint.HalfMemberIndices[i]);
+                    indexKnownHalfMembersCorresponding.Add(knownForceLines.Count);
+                    flippedForceLineJoint = AllHalfMembers[AllHalfMembers[joint.HalfMemberIndices[i]].OtherHalfMemberIndex].ForceLineJoint; flippedForceLineJoint.Flip();
                     knownForceLines.Add(flippedForceLineJoint);
                     knownForceLinesForAngles.Add(AllHalfMembers[joint.HalfMemberIndices[i]].HalfMemberLine);
                     distribution[0]++;
@@ -77,8 +85,8 @@ namespace GHPlugin
 
                 else
                 {
-                    indexUnknownMembers.Add(joint.MemberIndices[i]);
-                    indexUnknownMembersCorresponding.Add(unknownForceLines.Count);
+                    indexUnknownHalfMembers.Add(joint.HalfMemberIndices[i]);
+                    indexUnknownHalfMembersCorresponding.Add(unknownForceLines.Count);
                     unknownForceLines.Add(AllHalfMembers[joint.HalfMemberIndices[i]].HalfMemberLine);
                     distribution[3]++;
                 }
@@ -89,7 +97,7 @@ namespace GHPlugin
                 indexSupports.Add(joint.ExternalForceIndices[i]);
                 indexSupportsCorresponding.Add(knownForceLines.Count);
                 knownForceLines.Add(AllExternalForces[joint.ExternalForceIndices[i]].ForceLine);
-                knownForceLinesForAngles.Add(AllExternalForces[joint.ExternalForceIndices[i]].ForceLine);
+                knownForceLinesForAngles.Add(AllExternalForces[joint.ExternalForceIndices[i]].ForceLineForAngle);
                 distribution[2]++;
             }
 
@@ -103,31 +111,34 @@ namespace GHPlugin
             }
 
             oIndices = new List<int>();
-            for (int i = 0; i < indexKnownMembers.Count; i++)
-                oIndices.Add(indexKnownMembers[i]);
+            for (int i = 0; i < indexKnownHalfMembers.Count; i++)
+                oIndices.Add(indexKnownHalfMembers[i]);
             for (int i = 0; i < indexSupports.Count; i++)
                 oIndices.Add(indexSupports[i]);
             for (int i = 0; i < indexExtForces.Count; i++)
                 oIndices.Add(indexExtForces[i]);
-            for (int i = 0; i < indexUnknownMembers.Count; i++)
-                oIndices.Add(indexUnknownMembers[i]);
+            for (int i = 0; i < indexUnknownHalfMembers.Count; i++)
+                oIndices.Add(indexUnknownHalfMembers[i]);
 
             oCorrespondingIndices = new List<int>();
-            for (int i = 0; i < indexKnownMembersCorresponding.Count; i++)
-                oCorrespondingIndices.Add(indexKnownMembersCorresponding[i]);
+            for (int i = 0; i < indexKnownHalfMembersCorresponding.Count; i++)
+                oCorrespondingIndices.Add(indexKnownHalfMembersCorresponding[i]);
             for (int i = 0; i < indexSupportsCorresponding.Count; i++)
                 oCorrespondingIndices.Add(indexSupportsCorresponding[i]);
             for (int i = 0; i < indexExtForcesCorresponding.Count; i++)
                 oCorrespondingIndices.Add(indexExtForcesCorresponding[i]);
-            for (int i = 0; i < indexUnknownMembersCorresponding.Count; i++)
-                oCorrespondingIndices.Add(indexUnknownMembersCorresponding[i]);
+            for (int i = 0; i < indexUnknownHalfMembersCorresponding.Count; i++)
+                oCorrespondingIndices.Add(indexUnknownHalfMembersCorresponding[i]);
 
             oKnownForceLines = knownForceLines;
             oUnknownForceLines = unknownForceLines;
             oKnownForceLinesForAngles = knownForceLinesForAngles;
 
+            
+
             return distribution;
         }
+
 
         public void SetFormLinesOrder(List<Line> iKnownForceLinesForAngles, List<Line> iUnknownForceLines, ref List<int> oKnownForceLinesOrder, ref List<int> oUnknownForceLinesOrder)
         {
@@ -170,6 +181,8 @@ namespace GHPlugin
                     myAnglesUnknownLines[_1] = 400;
                 }
             }
+
+            
         }
 
         public void CalculateFormDiagramJoint(List<Line> iKnownForceLines, List<Line> iUnknownForceLines, Joint iJoint, ref List<Line> oSolvedKnownForceLines, ref List<Line> oSolvedUnknownForceLines)
@@ -261,10 +274,10 @@ namespace GHPlugin
             List<int> myCorrespondingIndices = new List<int>();
             List<int> myIndices = new List<int>();
 
-            List<int> indexKnownMembers; ;
-            List<int> indexKnownMembersCorresponding; ;
-            List<int> indexUnknownMembers; ;
-            List<int> indexUnknownMembersCorresponding; ;
+            List<int> indexKnownHalfMembers; ;
+            List<int> indexKnownHalfMembersCorresponding; ;
+            List<int> indexUnknownHalfMembers; ;
+            List<int> indexUnknownHalfMembersCorresponding; ;
             List<int> indexSupports;
             List<int> indexSupportsCorresponding;
             List<int> indexExtForces;
@@ -272,19 +285,15 @@ namespace GHPlugin
 
             for (int i = 0; i < AllJoints.Count; i++)
             {
-                if(i == 4)
-                {
-                    int test = 1;
-                }
                 if(AllJoints[i].JointSolved == false)
                 {
                     AllJoints[i].KnownsUnknowns(AllMembers);
                     if ((AllJoints[i].Unknowns < 3) && (AllJoints[i].Unknowns > -1))
                     {
-                        indexKnownMembers = new List<int>();
-                        indexKnownMembersCorresponding = new List<int>();
-                        indexUnknownMembers = new List<int>();
-                        indexUnknownMembersCorresponding = new List<int>();
+                        indexKnownHalfMembers = new List<int>();
+                        indexKnownHalfMembersCorresponding = new List<int>();
+                        indexUnknownHalfMembers = new List<int>();
+                        indexUnknownHalfMembersCorresponding = new List<int>();
                         indexSupports = new List<int>();
                         indexSupportsCorresponding = new List<int>();
                         indexExtForces = new List<int>();
@@ -299,8 +308,8 @@ namespace GHPlugin
                         {
                             if (j < myDistribtution[0])
                             {
-                                indexKnownMembers.Add(myIndices[j]);
-                                indexKnownMembersCorresponding.Add(myCorrespondingIndices[j]);
+                                indexKnownHalfMembers.Add(myIndices[j]);
+                                indexKnownHalfMembersCorresponding.Add(myCorrespondingIndices[j]);
                             }
                             else if (j < myDistribtution[1] + myDistribtution[0])
                             {
@@ -314,24 +323,24 @@ namespace GHPlugin
                             }
                             else
                             {
-                                indexUnknownMembers.Add(myIndices[j]);
-                                indexUnknownMembersCorresponding.Add(myCorrespondingIndices[j]);
+                                indexUnknownHalfMembers.Add(myIndices[j]);
+                                indexUnknownHalfMembersCorresponding.Add(myCorrespondingIndices[j]);
                             }
                         }
 
-                        for (int j = 0; j < indexUnknownMembers.Count; j++)
+                        for (int j = 0; j < indexUnknownHalfMembers.Count; j++)
                         {
-                            AllMembers[indexUnknownMembers[j]].ForceLineJoint1 = mySolvedUnknownForceLines[indexUnknownMembersCorresponding[j]];
-                            AllMembers[indexUnknownMembers[j]].Known = true;
-                            AllMembers[indexUnknownMembers[j]].Force = AllMembers[indexUnknownMembers[j]].ForceLineJoint1.Length;
-                            if (Vector3d.Multiply(myUnknownForceLines[indexUnknownMembersCorresponding[j]].Direction, mySolvedUnknownForceLines[indexUnknownMembersCorresponding[j]].Direction) > 0.0)
-                                AllMembers[indexUnknownMembers[j]].PositiveForce = false;
+                            AllHalfMembers[indexUnknownHalfMembers[j]].ForceLineJoint = mySolvedUnknownForceLines[indexUnknownHalfMembersCorresponding[j]];
+                            AllMembers[AllHalfMembers[indexUnknownHalfMembers[j]].MemberIndex].Known = true;
+                            AllMembers[AllHalfMembers[indexUnknownHalfMembers[j]].MemberIndex].Force = AllHalfMembers[indexUnknownHalfMembers[j]].ForceLineJoint.Length;
+                            if (Vector3d.Multiply(myUnknownForceLines[indexUnknownHalfMembersCorresponding[j]].Direction, mySolvedUnknownForceLines[indexUnknownHalfMembersCorresponding[j]].Direction) > 0.0)
+                                AllMembers[AllHalfMembers[indexUnknownHalfMembers[j]].MemberIndex].PositiveForce = false;
                             else
-                                AllMembers[indexUnknownMembers[j]].PositiveForce = true;
+                                AllMembers[AllHalfMembers[indexUnknownHalfMembers[j]].MemberIndex].PositiveForce = true;
                         }
 
-                        for (int j = 0; j < indexKnownMembers.Count; j++)
-                            AllMembers[indexKnownMembers[j]].ForceLineJoint2 = mySolvedKnownForceLines[indexKnownMembersCorresponding[j]];
+                        for (int j = 0; j < indexKnownHalfMembers.Count; j++)
+                            AllHalfMembers[indexKnownHalfMembers[j]].ForceLineJoint = mySolvedKnownForceLines[indexKnownHalfMembersCorresponding[j]];
 
                         for (int j = 0; j < indexSupports.Count; j++)
                             AllSupportReactions[indexSupports[j]].ForceLineJoint = mySolvedKnownForceLines[indexSupportsCorresponding[j]];
@@ -345,10 +354,104 @@ namespace GHPlugin
             }
         }
 
-        public void SolveSingleUnknownJoint()
+        public List<Line> ForceLinesJoint()
         {
-            
+            List<Line> oMemberLinesForce = new List<Line>();
+
+            for (int i = 0; i < AllHalfMembers.Count; i++)
+                oMemberLinesForce.Add(AllHalfMembers[i].ForceLineJoint);
+
+            return oMemberLinesForce;
         }
+
+        
+        public void CreateOverallForceDiagram()
+        {
+            //create overall force diagram
+            int solvedJoints = 0;
+            Point3d startPoint = DummyPoint;
+            Vector3d tranformationVector = new Vector3d(DummyPoint);
+
+            Transform transformationMatrix = Transform.Translation(tranformationVector);
+            Line tempLine;
+
+            for (int k = 0; k < AllJoints[0].HalfMemberIndices.Count; k++)
+            {
+                tempLine = AllHalfMembers[AllJoints[0].HalfMemberIndices[k]].ForceLineJoint;
+                tempLine.Transform(transformationMatrix);
+                AllMembers[AllHalfMembers[AllJoints[0].HalfMemberIndices[k]].MemberIndex].ForceLine = tempLine;
+            }
+
+            for (int k = 0; k < AllJoints[0].ExternalForceIndices.Count; k++)
+            {
+                tempLine = AllExternalForces[AllJoints[0].ExternalForceIndices[k]].ForceLineJoint;
+                tempLine.Transform(transformationMatrix);
+                AllExternalForces[AllJoints[0].ExternalForceIndices[k]].ForceLine = tempLine;
+            }
+
+            for (int k = 0; k < AllJoints[0].SupportReactionIndices.Count; k++)
+            {
+                tempLine = AllSupportReactions[AllJoints[0].SupportReactionIndices[k]].ForceLineJoint;
+                tempLine.Transform(transformationMatrix);
+                AllSupportReactions[AllJoints[0].SupportReactionIndices[k]].ForceLine = tempLine;
+            }
+
+            AllJoints[0].Relocated = true;
+            solvedJoints++;
+            for (int l = 0; l < (AllJoints.Count); l++)
+            {
+                for (int i = 0; i < (AllJoints.Count); i++)
+                {
+                    if (AllJoints[i].Relocated == false)
+                    {
+                        for (int j = 0; j < AllJoints[i].HalfMemberIndices.Count; j++)
+                        {
+                            if ((AllHalfMembers[AllHalfMembers[AllJoints[i].HalfMemberIndices[j]].OtherHalfMemberIndex].MemberIndex == AllHalfMembers[AllJoints[i].HalfMemberIndices[j]].MemberIndex)
+                                && (AllJoints[AllHalfMembers[AllHalfMembers[AllJoints[i].HalfMemberIndices[j]].OtherHalfMemberIndex].JointIndex].Relocated))
+                            {
+                                tranformationVector = new Vector3d(AllMembers[AllHalfMembers[AllHalfMembers[AllJoints[i].HalfMemberIndices[j]].OtherHalfMemberIndex].MemberIndex].ForceLine.To);
+                                tranformationVector -= new Vector3d(AllHalfMembers[AllJoints[i].HalfMemberIndices[j]].ForceLineJoint.From);
+                                transformationMatrix = Transform.Translation(tranformationVector);
+
+                                for (int k = 0; k < AllJoints[i].HalfMemberIndices.Count; k++)
+                                {
+                                    if (AllMembers[AllHalfMembers[AllJoints[i].HalfMemberIndices[k]].MemberIndex].ForceLine.Length <= 0)
+                                    {
+                                        tempLine = AllHalfMembers[AllJoints[i].HalfMemberIndices[k]].ForceLineJoint;
+                                        tempLine.Transform(transformationMatrix);
+                                        AllMembers[AllHalfMembers[AllJoints[i].HalfMemberIndices[k]].MemberIndex].ForceLine = tempLine;
+                                    }
+                                }
+
+                                for (int k = 0; k < AllJoints[i].ExternalForceIndices.Count; k++)
+                                {
+                                    tempLine = AllExternalForces[AllJoints[i].ExternalForceIndices[k]].ForceLineJoint;
+                                    tempLine.Transform(transformationMatrix);
+                                    AllExternalForces[AllJoints[i].ExternalForceIndices[k]].ForceLine = tempLine;
+                                }
+
+                                for (int k = 0; k < AllJoints[i].SupportReactionIndices.Count; k++)
+                                {
+                                    tempLine = AllSupportReactions[AllJoints[i].SupportReactionIndices[k]].ForceLineJoint;
+                                    tempLine.Transform(transformationMatrix);
+                                    AllSupportReactions[AllJoints[i].SupportReactionIndices[k]].ForceLine = tempLine;
+                                }
+
+                                AllJoints[i].Relocated = true;
+                                solvedJoints++;
+                                break;
+                            }
+                        }
+                    }
+                    if (solvedJoints == AllJoints.Count)
+                        break;
+                }
+                if (solvedJoints == AllJoints.Count)
+                    break;
+            }
+
+        }
+        
 
         public void SolveForceDiagram()
         {

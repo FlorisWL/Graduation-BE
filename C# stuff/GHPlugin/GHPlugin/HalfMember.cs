@@ -10,8 +10,10 @@ namespace GHPlugin
     public class HalfMember
     {
         public int MemberIndex;
+        public int OtherHalfMemberIndex;
         public int JointIndex;
         public Line HalfMemberLine;
+        public Line ForceLineJoint;
 
         public HalfMember(int memberIndex, Member member, Boolean start, List<Point3d> joints)
         {
