@@ -14,7 +14,7 @@ namespace GHPlugin
         public GhcCreateMember()
           : base("Create Member", "Member",
               "Create a Member!",
-              "GS tool", "Graphic Statics - old")
+              "GS tool", "deprecated")
         {
         }
 

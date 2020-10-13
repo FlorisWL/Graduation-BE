@@ -14,7 +14,7 @@ namespace GHPlugin
         public CreateExternalForce()
           : base("Create External Force", "Ext. Force",
               "Create External Force!",
-              "GS tool", "Graphic Statics - old")
+              "GS tool", "deprecated")
         {
         }
 

@@ -33,7 +33,7 @@ namespace GHPlugin
             List<bool> myPositiveForce = new List<bool>();
             bool valid;
 
-            if (angles[0] < angles[1])
+            if (angles[0] > angles[1])
             {
                 OtherForceLines.Add(new Line(mainLine.To, otherVectors[0]));
                 OtherForceLines.Add(new Line(mainLine.From, otherVectors[1]));
@@ -182,7 +182,7 @@ namespace GHPlugin
 
             for (int i = 0; i < formLines.Count; i++)
             {
-                startPoint = (3*formLines[i].From + 1*formLines[i].To)/4.0;
+                startPoint = (1*formLines[i].From + 1*formLines[i].To)/2.0;
                 transformationVector = formLines[i].Direction;
                 transformationVector.Unitize();
                 transformationVector = transformationVector * 0.3;
