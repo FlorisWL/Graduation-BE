@@ -23,7 +23,7 @@ namespace GHPlugin
 
         public GeneralDiagram(
             List<ExternalForce> allExternalForces, List<SupportReaction> allSupportReactions, 
-            List<Member> allMembers, List<Point3d> allPoints)
+            List<Member> allMembers, List<Point3d> allPoints, double scaleFactorSpacing)
         {
             AllExternalForces = allExternalForces;
             AllSupportReactions = allSupportReactions;
@@ -42,7 +42,7 @@ namespace GHPlugin
 
             for (int i = 0; i < allPoints.Count; i++)
             {
-                AllJoints.Add(new Joint(i, allPoints));
+                AllJoints.Add(new Joint(i, allPoints, scaleFactorSpacing));
                 AllJoints[i].FillJoint(AllHalfMembers, AllExternalForces, allSupportReactions);
             }
 
@@ -371,6 +371,7 @@ namespace GHPlugin
             int solvedJoints = 0;
             Point3d startPoint = DummyPoint;
             Vector3d tranformationVector = new Vector3d(DummyPoint);
+            tranformationVector -= new Vector3d(AllJoints[0].InitSolveLocation);
 
             Transform transformationMatrix = Transform.Translation(tranformationVector);
             Line tempLine;

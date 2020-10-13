@@ -182,7 +182,7 @@ namespace GHPlugin
 
             for (int i = 0; i < formLines.Count; i++)
             {
-                startPoint = (3*formLines[i].From + 1*formLines[i].To)/4.0;
+                startPoint = (1*formLines[i].From + 1*formLines[i].To)/2.0;
                 transformationVector = formLines[i].Direction;
                 transformationVector.Unitize();
                 transformationVector = transformationVector * 0.3;

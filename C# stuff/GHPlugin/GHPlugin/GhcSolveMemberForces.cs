@@ -35,9 +35,11 @@ namespace GHPlugin
             pManager.AddLineParameter("Supports Force", "Supports Force", "The lines of the supports reactions in the force diagram!", GH_ParamAccess.list);
             pManager.AddLineParameter("External Forces Force", "Ext. Forces Force", "The lines of the external forces in the force diagram!", GH_ParamAccess.list);
 
-            pManager.AddIntegerParameter("Display option", "Display option", "Choose the display options: 0 = Design as a whole, 1 = Global form diagram, 2 = Global unified diagram!", GH_ParamAccess.item, 0);
-            pManager.AddBooleanParameter("Display Force Diagram", "Display Force Diagram", "Display the global force diagram!", GH_ParamAccess.item, true);
-            pManager.AddBooleanParameter("Display Numerical Values", "Display Numerical Values", "Display the numerical values of the vectors in the form diagram!", GH_ParamAccess.item, false);
+            pManager.AddBooleanParameter("Display Unified Diagram", "Display Unified Diagram", "Choose the display option of the form diagram: False = Only the wireframe structure, True = wireframe structure plus the unified digram!", GH_ParamAccess.item, true);
+            pManager.AddBooleanParameter("Display Force Diagram", "Display Force Diagram", "Display the overall force diagram!", GH_ParamAccess.item, true);
+            pManager.AddBooleanParameter("Display Joint Force Diagrams", "Display Joint Force Diagrams", "Display the individual force diagrams of each joint!", GH_ParamAccess.item, true);
+            pManager.AddNumberParameter("Spacing Joint Force Diagrams", "Spacing Joint Force Diagrams", "Define the scaling factor for the spacing between the joint force diagrams, with 1.0 as default. Input is only relevant if joint force diagrams are displayed!", GH_ParamAccess.item, 1.0);
+            pManager.AddBooleanParameter("Display Numerical Values", "Display Numerical Values", "Display the numerical values of the members, external forces, and support reactions in the form diagram!", GH_ParamAccess.item, false);
 
         }
 
@@ -63,7 +65,8 @@ namespace GHPlugin
             pManager.AddColourParameter("Colour Global Members", "Colour Global Members", "The colours of global members: blue for compression, red for tension!", GH_ParamAccess.list);
 
             pManager.AddNumberParameter("Force Magnitudes Supports", "Force Magnitude Supports", "The magnitude of the support reactions!", GH_ParamAccess.list);
-            pManager.AddPlaneParameter("Locations text tag", "Locations text tag", "Locations as planes for the numerical force value 3D text tags", GH_ParamAccess.list);
+            pManager.AddPlaneParameter("Locations Text Tag", "Locations Text Tag", "Locations as planes for the numerical force value 3D text tags", GH_ParamAccess.list);
+            pManager.AddPlaneParameter("Locations Joint Force Diagrams", "Locations Joints", "Locations as planes of the start points of the force diagram of each joint", GH_ParamAccess.list);
         }
 
         /// <summary>
@@ -81,8 +84,10 @@ namespace GHPlugin
             List<Line> iExtForceLinesForm = new List<Line>();
             List<Line> iSupportLinesForce = new List<Line>();
             List<Line> iExtForceLinesForce = new List<Line>();
-            int iDisplayOption = 0;
+            bool iDisplayUnifiedDiagram = true;
             bool iDisplayForceDiagram = true;
+            bool iDisplayJointForceDiagram = true;
+            double iSpacingJoinForceDiagram = 1.0;
             bool iDisplayNumericalValues = true;
 
             List<Line> oSupportLinesForm = new List<Line>();
@@ -98,6 +103,7 @@ namespace GHPlugin
             List<Color> oMemberColors = new List<Color>();
             List<Double> oForceMagnitudes = new List<Double>();
             List<Plane> oLocationsForceTextTags = new List<Plane>();
+            List<Point3d> oLocationsJointForceDiagrams = new List<Point3d>();
 
             DA.GetDataList(0, iJoints);
             DA.GetDataList(1, iMemberStartIndices);
@@ -106,9 +112,11 @@ namespace GHPlugin
             DA.GetDataList(4, iExtForceLinesForm);
             DA.GetDataList(5, iSupportLinesForce);
             DA.GetDataList(6, iExtForceLinesForce);
-            DA.GetData(7, ref iDisplayOption);
+            DA.GetData(7, ref iDisplayUnifiedDiagram);
             DA.GetData(8, ref iDisplayForceDiagram);
-            DA.GetData(9, ref iDisplayNumericalValues);
+            DA.GetData(9, ref iDisplayJointForceDiagram);
+            DA.GetData(10, ref iSpacingJoinForceDiagram);
+            DA.GetData(11, ref iDisplayNumericalValues);
 
             List<Member> allMembers = new List<Member>();
 
@@ -132,7 +140,7 @@ namespace GHPlugin
                 allExternalForces.Add(new ExternalForce(iExtForceLinesForm[i], iExtForceLinesForce[i], iJoints));
             }
 
-            GeneralDiagram myGeneralDiagram = new GeneralDiagram(allExternalForces, allSupports, allMembers, iJoints);
+            GeneralDiagram myGeneralDiagram = new GeneralDiagram(allExternalForces, allSupports, allMembers, iJoints, iSpacingJoinForceDiagram);
 
             for (int i = 0; i < myGeneralDiagram.AllJoints.Count; i++)
                 //myGeneralDiagram.SolveForceDiagram();
@@ -142,9 +150,6 @@ namespace GHPlugin
 
             for (int i = 0; i < allMembers.Count; i++)
             {
-                //oMemberLinesForce.Add(allMembers[i].ForceLine);
-                //oMemberLinesForceJoint.Add(allMembers[i].ForceLineJoint1);
-                //oMemberLinesForceJoint.Add(allMembers[i].ForceLineJoint2);
                 oForceMagnitudes.Add(allMembers[i].Force);
 
                 if (allMembers[i].PositiveForce == false)
@@ -153,19 +158,37 @@ namespace GHPlugin
                     oMemberColors.Add(Color.FromArgb(122, Color.FromName("Red")));
             }
 
-            oMemberLinesForceJoint = myGeneralDiagram.ForceLinesJoint();
-
-            myGeneralDiagram.CreateOverallForceDiagram();
-
-            for (int i = 0; i < allMembers.Count; i++)
+            if(iDisplayForceDiagram)
             {
-                oMemberLinesForce.Add(allMembers[i].ForceLine);
+                myGeneralDiagram.CreateOverallForceDiagram();
+
+                for (int i = 0; i < allMembers.Count; i++)
+                    oMemberLinesForce.Add(allMembers[i].ForceLine);
+
+                for (int i = 0; i < allSupports.Count; i++)
+                    oSupportLinesForce.Add(allSupports[i].ForceLine);
+
+                for (int i = 0; i < allExternalForces.Count; i++)
+                    oExtForceLinesForce.Add(allExternalForces[i].ForceLine);
             }
 
-            double myScalingFactor = 1.0 / 9.0;
-
-            if (iDisplayOption == 1)
+            if (iDisplayJointForceDiagram)
             {
+                oMemberLinesForceJoint = myGeneralDiagram.ForceLinesJoint();
+
+                for (int i = 0; i < myGeneralDiagram.AllJoints.Count; i++)
+                    oLocationsJointForceDiagrams.Add(myGeneralDiagram.AllJoints[i].InitSolveLocation);
+
+                for (int i = 0; i < allSupports.Count; i++)
+                    oSupportLinesForceJoint.Add(allSupports[i].ForceLineJoint);
+
+                for (int i = 0; i < allExternalForces.Count; i++)
+                    oExtForceLinesForceJoint.Add(allExternalForces[i].ForceLineJoint);
+            }
+
+            if (iDisplayUnifiedDiagram)
+            {
+                double myScalingFactor = 1.0 / 9.0;
                 functions.DisplayRectangles(allMembers, myScalingFactor, out oDisplayBreps);
             }
 
@@ -173,17 +196,28 @@ namespace GHPlugin
             for (int i = 0; i < allSupports.Count; i++)
             {
                 oForceMagnitudes.Add(allSupports[i].Force);
-                oSupportLinesForceJoint.Add(allSupports[i].ForceLineJoint);
-                oSupportLinesForce.Add(allSupports[i].ForceLine);
             }
 
             oExtForceLinesForm = iExtForceLinesForm;
             for (int i = 0; i < allExternalForces.Count; i++)
             {
                 oForceMagnitudes.Add(allExternalForces[i].Force);
-                oExtForceLinesForceJoint.Add(allExternalForces[i].ForceLineJoint);
-                oExtForceLinesForce.Add(allExternalForces[i].ForceLine);
             }
+
+            if (iDisplayNumericalValues)
+            {
+                List<Plane> tempLocations = new List<Plane>();
+                functions.DisplayNumericalValues(oMemberLinesForm, out tempLocations);
+                for (int i = 0; i < tempLocations.Count; i++)
+                    oLocationsForceTextTags.Add(tempLocations[i]);
+                functions.DisplayNumericalValues(oSupportLinesForm, out tempLocations);
+                for (int i = 0; i < tempLocations.Count; i++)
+                    oLocationsForceTextTags.Add(tempLocations[i]);
+                functions.DisplayNumericalValues(oExtForceLinesForm, out tempLocations);
+                for (int i = 0; i < tempLocations.Count; i++)
+                    oLocationsForceTextTags.Add(tempLocations[i]);
+            }
+
 
             DA.SetDataList(0, oSupportLinesForm);
             DA.SetDataList(1, oExtForceLinesForm);
@@ -198,6 +232,7 @@ namespace GHPlugin
             DA.SetDataList(10, oMemberColors);
             DA.SetDataList(11, oForceMagnitudes);
             DA.SetDataList(12, oLocationsForceTextTags);
+            DA.SetDataList(13, oLocationsJointForceDiagrams);
         }
 
         /// <summary>

@@ -17,7 +17,7 @@ namespace GHPlugin
         public List<int> SupportReactionIndices = new List<int>();
         public Boolean JointSolved = false;
         public Boolean Relocated = false;
-        public Point3d InitSolveLocation = new Point3d(0,0,0);
+        public Point3d InitSolveLocation = new Point3d(0,-10,0);
         public int Knowns;
         public int Unknowns;
 
@@ -26,11 +26,15 @@ namespace GHPlugin
             JointLocation = jointLocation;
         }
 
-        public Joint(int pointIndex, List<Point3d> points)
+        public Joint(int pointIndex, List<Point3d> points, double iScaleFactorSpacing)
         {
             PointIndex = pointIndex;
             JointLocation = points[pointIndex];
-            InitSolveLocation.Y = pointIndex * 10;
+            if(pointIndex%2 == 1)
+            {
+                InitSolveLocation.Y += -10 * iScaleFactorSpacing;
+            }
+            InitSolveLocation.X += pointIndex * (12.5 * 0.5) * iScaleFactorSpacing;
         }
 
         public void FillJoint(List<HalfMember> allHalfMembers, List<ExternalForce> allExtForces, List<SupportReaction> allSupports)
