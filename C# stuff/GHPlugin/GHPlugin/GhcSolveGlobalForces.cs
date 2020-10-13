@@ -1,13 +1,9 @@
 ﻿using System;
 using System.Drawing;
-using Rhino.Display;
 using System.Diagnostics;
 using System.Collections.Generic;
-using System.Drawing.Printing;
-using System.Windows.Forms.VisualStyles;
 using Grasshopper.Kernel;
 using Rhino.Geometry;
-using System.Linq;
 
 namespace GHPlugin
 {
@@ -56,12 +52,13 @@ namespace GHPlugin
             pManager.AddLineParameter("Supports Force", "Supports Force", "The lines of the supports reactions in the force diagram!", GH_ParamAccess.list);
             pManager.AddLineParameter("External Forces Force", "Ext. Forces Force", "The lines of the external forces in the force diagram!", GH_ParamAccess.list);
             pManager.AddLineParameter("Resultant Force", "Resultant Force", "The line of the resultant force in the force diagram!", GH_ParamAccess.item);
-            pManager.AddLineParameter("Virtual Members Force", "Virt. Members Force", "The lines of the  (virtual) members in the global force diagram!", GH_ParamAccess.list);
+            pManager.AddLineParameter("Virtual Members Force", "Virt. Members Force", "The lines of the (virtual) members in the global force diagram!", GH_ParamAccess.list);
 
-            pManager.AddNumberParameter("Force Magnitudes Supports", "Force Magnitude Supports","The magnitude of the support reactions!",GH_ParamAccess.list);
-            
             pManager.AddBrepParameter("Members unified diagram", "Members unified diagram", "Member geometry to display for the unified diagram", GH_ParamAccess.list);
             pManager.AddColourParameter("Colour Global Members", "Colour Global Members", "The colours of global members: blue for compression, red for tension!", GH_ParamAccess.list);
+
+            pManager.AddNumberParameter("Force Magnitudes Supports", "Force Magnitude Supports", "The magnitude of the support reactions!", GH_ParamAccess.list);
+            pManager.AddPlaneParameter("Locations text tag", "Locations text tag", "Locations as planes for the numerical force value 3D text tags", GH_ParamAccess.list);
         }
 
         protected override void SolveInstance(IGH_DataAccess DA)
@@ -116,14 +113,16 @@ namespace GHPlugin
             List<Line> oExtForceLinesForce;
             Line oResultantLineForce;
             List<Line> oVirtMemberLinesForce = new List<Line>();
-            List<Double> oSupportForceMagnitudes = new List<Double>();
+            List<Double> oForceMagnitudes = new List<Double>();
+            List<Plane> oLocationsForceTextTags = new List<Plane>();
 
+            List<Line> initialSupportLinesForm = new List<Line>();
             List<Joint> myJoints = new List<Joint>();
             List<ExternalForce> myExternalForces = new List<ExternalForce>();
             List<SupportReaction> mySupportReactions = new List<SupportReaction>();
             //double myScalingFactorUnified = 1.5 / (Enumerable.Sum(iForceMagnitudes) / iScalingFactor);
-            double ratio = 1.0 / 7.0;
-            double myScalingFactorUnified = ratio / 2.0;
+            double ratio = 1.0 / 3.0;
+            double myScalingFactorUnified = ratio / 3.0;
 
             Vector3d zPostive = new Vector3d(0, 0, 1);
             Vector3d yPositive = new Vector3d(0, 1, 0);
@@ -150,6 +149,7 @@ namespace GHPlugin
                     mySupportVector.Rotate(-0.5 * Math.PI, zPostive);
                     SupportReaction mySupportReaction = new SupportReaction(iSupportIndices[i], iJoints, mySupportVector);
                     mySupportReactions.Add(mySupportReaction);
+                    initialSupportLinesForm.Add(mySupportReaction.FormLine);
                 }
 
                 if (iSupportVerticals[i])
@@ -158,6 +158,7 @@ namespace GHPlugin
                     mySupportVector.Rotate(iSupportRotations[i] / 180.0 * Math.PI, zPostive);
                     SupportReaction mySupportReaction = new SupportReaction(iSupportIndices[i], iJoints, mySupportVector);
                     mySupportReactions.Add(mySupportReaction);
+                    initialSupportLinesForm.Add(mySupportReaction.FormLine);
                 }
             }
 
@@ -172,6 +173,7 @@ namespace GHPlugin
             myResultant.ResultantForAngle(myGlobalDiagram);
 
 
+
             for (int i = 0; i < myVirtMembers.Count; i++)
                 oMemberLinesForm.Add(myVirtMembers[i].MemberLine);
 
@@ -183,35 +185,45 @@ namespace GHPlugin
                 myGlobalDiagram.SolveForceDiagram(myVirtMembers);
             }
 
-            for (int i = 0; i < mySupportReactions.Count; i++)
-            { 
-                oSupportLinesForce.Add(mySupportReactions[i].ForceLine);
-                if (mySupportReactions[i].PositiveForce)
-                    oSupportForceMagnitudes.Add(mySupportReactions[i].Force * iScalingFactor);
-                else
-                    oSupportForceMagnitudes.Add(mySupportReactions[i].Force * iScalingFactor * (-1.0));
-            }
-
             for (int i = 0; i < myVirtMembers.Count; i++)
                 oVirtMemberLinesForce.Add(myVirtMembers[i].ForceLine);
 
             for (int i = 0; i < mySupportReactions.Count; i++)
             {
+                oSupportLinesForce.Add(mySupportReactions[i].ForceLine);
                 double supportLengthForm = mySupportReactions[i].Force * ratio;
                 double extendValue = supportLengthForm - 1.0;
                 mySupportReactions[i].FormLine.Extend(extendValue, 0);
-
+                initialSupportLinesForm[i] = mySupportReactions[i].FormLine;
                 if (mySupportReactions[i].PositiveForce)
                     mySupportReactions[i].FormLine.Flip();
 
                 oSupportLinesForm.Add(mySupportReactions[i].FormLine);
             }
 
+            List<Line> formLinesForTextTag = new List<Line>();
+
+            for (int i = 0; i < mySupportReactions.Count; i++)
+            {
+                formLinesForTextTag.Add(initialSupportLinesForm[i]);
+                oForceMagnitudes.Add(Math.Round(mySupportReactions[i].Force * iScalingFactor));
+
+            }
+            for (int i = 0; i < myExternalForces.Count; i++)
+            {
+                formLinesForTextTag.Add(oExtForceLinesForm[i]);
+                oForceMagnitudes.Add(Math.Round(myExternalForces[i].Force * iScalingFactor));
+            }
+            formLinesForTextTag.Add(oResultantLineForm);
+            oForceMagnitudes.Add(Math.Round(myResultant.Force * iScalingFactor));
+            functions.DisplayNumericalValues(formLinesForTextTag, out oLocationsForceTextTags);
+
+
             List<Brep> oDisplayBreps = new List<Brep>();
             List<Color> oMemberColors = new List<Color>();
             List<Line> memberLinesForm = new List<Line>();
             List<Member> allMembers = new List<Member>();
-
+            
             for (int i = 0; i < iMemberStartIndices.Count; i++)
             {
                 allMembers.Add(new Member(iMemberStartIndices[i], iMemberEndIndices[i], iJoints));
@@ -243,6 +255,11 @@ namespace GHPlugin
                 oVirtMemberLinesForce = new List<Line>();
             }
 
+            if(iDisplayNumericalValues == false)
+            {
+                oLocationsForceTextTags = new List<Plane>();
+            }
+
             DA.SetDataList(0, oSupportLinesForm);
             DA.SetDataList(1, oExtForceLinesForm);
             DA.SetData(2, oResultantLineForm);
@@ -251,9 +268,10 @@ namespace GHPlugin
             DA.SetDataList(5, oExtForceLinesForce);
             DA.SetData(6, oResultantLineForce);
             DA.SetDataList(7, oVirtMemberLinesForce);
-            DA.SetDataList(8, oSupportForceMagnitudes);
-            DA.SetDataList(9, oDisplayBreps);
-            DA.SetDataList(10, oMemberColors);
+            DA.SetDataList(8, oDisplayBreps);
+            DA.SetDataList(9, oMemberColors);
+            DA.SetDataList(10, oForceMagnitudes);
+            DA.SetDataList(11, oLocationsForceTextTags);
         }
 
         private void CustomDisplay(bool v)
@@ -265,7 +283,7 @@ namespace GHPlugin
         {
             get
             {
-                return null;
+                return Properties.Resources.icon_solveglobal;
             }
         }
 

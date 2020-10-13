@@ -93,6 +93,26 @@ namespace GHPlugin.Properties {
         /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Bitmap.
         /// </summary>
+        internal static System.Drawing.Bitmap icon_solveglobal {
+            get {
+                object obj = ResourceManager.GetObject("icon_solveglobal", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
+        internal static System.Drawing.Bitmap icon_solvemembers {
+            get {
+                object obj = ResourceManager.GetObject("icon_solvemembers", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
         internal static System.Drawing.Bitmap movingparticle_icon {
             get {
                 object obj = ResourceManager.GetObject("movingparticle_icon", resourceCulture);

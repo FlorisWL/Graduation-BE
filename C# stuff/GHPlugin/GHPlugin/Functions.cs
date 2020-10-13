@@ -33,7 +33,7 @@ namespace GHPlugin
             List<bool> myPositiveForce = new List<bool>();
             bool valid;
 
-            if (angles[0] < angles[1])
+            if (angles[0] > angles[1])
             {
                 OtherForceLines.Add(new Line(mainLine.To, otherVectors[0]));
                 OtherForceLines.Add(new Line(mainLine.From, otherVectors[1]));
@@ -168,5 +168,39 @@ namespace GHPlugin
             centerPoint = centerPoint / joints.Count;
             return centerPoint;
         }
+        
+        public void DisplayNumericalValues(List<Line> formLines, out List<Plane> locations)
+        {
+            Point3d startPoint;
+            Plane centerPlane;
+            Vector3d transformationVector;
+            double angle;
+            Functions functions = new Functions();
+            List<Plane> myLocations = new List<Plane>();
+            Vector3d zPositive = new Vector3d(0, 0, 1);
+            Plane planeXY = new Plane(new Point3d(0, 0, 0), zPositive);
+
+            for (int i = 0; i < formLines.Count; i++)
+            {
+                startPoint = (1*formLines[i].From + 1*formLines[i].To)/2.0;
+                transformationVector = formLines[i].Direction;
+                transformationVector.Unitize();
+                transformationVector = transformationVector * 0.3;
+                transformationVector.Rotate(0.5 * Math.PI, zPositive);
+                startPoint = Point3d.Add(startPoint, transformationVector);
+                centerPlane = new Plane(startPoint, new Vector3d(0, 0, 1));
+
+                angle = Vector3d.VectorAngle(new Vector3d(1, 0, 0), formLines[i].Direction, planeXY);
+                if (((angle > 0.5 * Math.PI) && (angle <= 1.5 * Math.PI)) || ((angle < -0.5 * Math.PI) && (angle >= -1.5 * Math.PI)))
+                    angle += Math.PI;
+
+                centerPlane.Rotate(angle, new Vector3d(0, 0, 1));
+
+                myLocations.Add(centerPlane);
+            }
+
+            locations = myLocations;
+        }
+
     }
 }
