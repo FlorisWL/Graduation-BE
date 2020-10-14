@@ -66,6 +66,7 @@ namespace GHPlugin
                 if (formLine.To == joints[i])
                 {
                     JointIndex = i;
+                    break;
                 }
             }
         }

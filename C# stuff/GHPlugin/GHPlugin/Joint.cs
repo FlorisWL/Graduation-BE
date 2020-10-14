@@ -66,9 +66,9 @@ namespace GHPlugin
 
         }
 
-        public void SetExternalForcesForAngle(List<HalfMember> iHalfMembers, List<ExternalForce> iExternalForces)
+        public void SetExternalForcesForAngle(List<HalfMember> iHalfMembers, List<ExternalForce> iExternalForces, List<SupportReaction> iSupportReactions)
         {
-            if(ExternalForceIndices.Count > 0)
+            if((ExternalForceIndices.Count > 0) || (SupportReactionIndices.Count > 0))
             {
                 Plane planeXY = new Plane(new Point3d(0, 0, 0), new Vector3d(0, 0, -1));
                 List<double> anglesBetweenMembers = new List<double>();
@@ -81,19 +81,25 @@ namespace GHPlugin
                     for (int j = 0; j < HalfMemberIndices.Count; j++)
                         if (i != j)
                         {
-                            tempAngle = Vector3d.VectorAngle(iHalfMembers[i].HalfMemberLine.Direction, iHalfMembers[i].HalfMemberLine.Direction, planeXY);
+                            tempAngle = Vector3d.VectorAngle(iHalfMembers[HalfMemberIndices[i]].HalfMemberLine.Direction, iHalfMembers[HalfMemberIndices[j]].HalfMemberLine.Direction, planeXY);
                             if (tempAngle < minAngle) minAngle = tempAngle;
                         }
                     anglesBetweenMembers.Add(minAngle);
                 }
                 double _1 = anglesBetweenMembers.Max();
                 int indexMaxAngle = anglesBetweenMembers.IndexOf(_1);
-                Line newLine = iHalfMembers[indexMaxAngle].HalfMemberLine;
-                Transform rotationTransformation = Transform.Rotation(_1 * 0.5, newLine.To);
+                Line newLine = iHalfMembers[HalfMemberIndices[indexMaxAngle]].HalfMemberLine;
+                Transform rotationTransformation = Transform.Rotation(_1 * -0.25, newLine.To);
+                newLine.Transform(rotationTransformation);
+
+                for (int i = 0; i < SupportReactionIndices.Count; i++)
+                    iSupportReactions[SupportReactionIndices[i]].ForceLineForAngle = newLine;
+
                 newLine.Transform(rotationTransformation);
 
                 for (int i = 0; i < ExternalForceIndices.Count; i++)
                     iExternalForces[ExternalForceIndices[i]].ForceLineForAngle = newLine;
+
             }
             
         }
