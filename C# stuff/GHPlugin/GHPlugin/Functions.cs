@@ -14,6 +14,41 @@ namespace GHPlugin
 {
     public class Functions
     {
+        public int InternalStaticDeterminacy(int m, int r, int j)
+        {
+            int degreeOfDeterminacy;
+            degreeOfDeterminacy = m + r - 2*j;
+            return degreeOfDeterminacy;
+        }
+
+        public int ExternalStaticDeterminacy(int r, int e)
+        {
+            int degreeOfDeterminacy;
+            degreeOfDeterminacy = r - e;
+            return degreeOfDeterminacy;
+        }
+
+        public bool MatchingInputs(List<int> listLengths)
+        {
+            bool match;
+            if (listLengths.Min() == listLengths.Max())
+                match = true;
+            else
+                match = false;
+
+            return match;
+        }
+        public bool IndicesInBounds(int listLength, List<int> indices)
+        {
+            bool inBounds;
+            if (indices.Max() < listLength)
+                inBounds = true;
+            else
+                inBounds = false;
+
+            return inBounds;
+        }
+
         public List<double> CreateDefaultList(int listLength, double value)
         {
             List<double> defaultList = new List<double>();
