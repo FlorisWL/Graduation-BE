@@ -47,7 +47,7 @@ namespace GHPlugin
             }
 
             for (int i = 0; i < AllJoints.Count; i++)
-                AllJoints[i].SetExternalForcesForAngle(AllHalfMembers, AllExternalForces);
+                AllJoints[i].SetExternalForcesForAngle(AllHalfMembers, AllExternalForces, AllSupportReactions);
         }
 
         public List<int> KnownUnknownLines(Joint joint, ref List<Line> oKnownForceLines, ref List<Line> oUnknownForceLines, ref List<Line> oKnownForceLinesForAngles, ref List<int> oIndices, ref List<int> oCorrespondingIndices)
@@ -106,7 +106,7 @@ namespace GHPlugin
                 indexExtForces.Add(joint.SupportReactionIndices[i]);
                 indexExtForcesCorresponding.Add(knownForceLines.Count);
                 knownForceLines.Add(AllSupportReactions[joint.SupportReactionIndices[i]].ForceLine);
-                knownForceLinesForAngles.Add(AllSupportReactions[joint.SupportReactionIndices[i]].ForceLine);
+                knownForceLinesForAngles.Add(AllSupportReactions[joint.SupportReactionIndices[i]].ForceLineForAngle);
                 distribution[1]++;
             }
 

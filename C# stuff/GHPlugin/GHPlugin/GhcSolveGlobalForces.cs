@@ -2,6 +2,7 @@
 using System.Drawing;
 using System.Diagnostics;
 using System.Collections.Generic;
+using System.Linq;
 using Grasshopper.Kernel;
 using Rhino.Geometry;
 
@@ -107,157 +108,236 @@ namespace GHPlugin
             averagePointJoints.Y += 4;
             List<Line> oSupportLinesForm = new List<Line>();
             List<Line> oExtForceLinesForm = new List<Line>();
-            Line oResultantLineForm;
+            Line oResultantLineForm = new Line();
             List<Line> oMemberLinesForm = new List<Line>();
             List<Line> oSupportLinesForce = new List<Line>();
-            List<Line> oExtForceLinesForce;
-            Line oResultantLineForce;
+            List<Line> oExtForceLinesForce = new List<Line>();
+            Line oResultantLineForce = new Line();
             List<Line> oVirtMemberLinesForce = new List<Line>();
             List<Double> oForceMagnitudes = new List<Double>();
             List<Plane> oLocationsForceTextTags = new List<Plane>();
+            List<Brep> oDisplayBreps = new List<Brep>();
+            List<Color> oMemberColors = new List<Color>();
 
             List<Line> initialSupportLinesForm = new List<Line>();
             List<Joint> myJoints = new List<Joint>();
             List<ExternalForce> myExternalForces = new List<ExternalForce>();
             List<SupportReaction> mySupportReactions = new List<SupportReaction>();
-            //double myScalingFactorUnified = 1.5 / (Enumerable.Sum(iForceMagnitudes) / iScalingFactor);
             double ratio = 1.0 / 3.0;
             double myScalingFactorUnified = ratio / 3.0;
-
             Vector3d zPostive = new Vector3d(0, 0, 1);
             Vector3d yPositive = new Vector3d(0, 1, 0);
             Vector3d yNegative = new Vector3d(0, -1, 0);
             Vector3d mySupportVector;
 
-            for (int i = 0; i < iJoints.Count; i++)
-                myJoints.Add(new Joint(iJoints[i]));
+            List<int> extForceInputLengths = new List<int>();
+            extForceInputLengths.Add(iForceIndices.Count);
+            extForceInputLengths.Add(iForceMagnitudes.Count);
+            extForceInputLengths.Add(iForceRotations.Count);
+            List<int> supportInputLengths = new List<int>();
+            supportInputLengths.Add(iSupportIndices.Count);
+            supportInputLengths.Add(iSupportHorizontals.Count);
+            supportInputLengths.Add(iSupportVerticals.Count);
+            supportInputLengths.Add(iSupportRotations.Count);
+            List<int> memberInputLengths = new List<int>();
+            memberInputLengths.Add(iMemberStartIndices.Count);
+            memberInputLengths.Add(iMemberEndIndices.Count);
+            List<int> allMaxIndices = new List<int>();
+            allMaxIndices.Add(iMemberStartIndices.Max());
+            allMaxIndices.Add(iMemberEndIndices.Max());
+            allMaxIndices.Add(iForceIndices.Max());
+            allMaxIndices.Add(iSupportIndices.Max());
 
-            for (int i = 0; i < iForceIndices.Count; i++)
+            bool noErrors = true;
+
+            if (functions.MatchingInputs(supportInputLengths) == false)
             {
-                ExternalForce myExternalForce = new ExternalForce(iForceIndices[i], iJoints, yNegative, iForceRotations[i], iForceMagnitudes[i]/iScalingFactor);
-                myExternalForce.LengthenFormLines(ratio);
-                myExternalForces.Add(myExternalForce);
-                oExtForceLinesForm.Add(myExternalForce.FormLine);
+                AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Support related inputs don't have matching list lengths!");
+                noErrors = false;
+            }
+            if (functions.MatchingInputs(extForceInputLengths) == false)
+            {
+                AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "External force related inputs don't have matching list lengths!");
+                noErrors = false;
+            }
+            if (functions.MatchingInputs(memberInputLengths) == false)
+            {
+                AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Member related inputs don't have matching list lengths!");
+                noErrors = false;
+            }
+            if (functions.IndicesInBounds(iJoints.Count, allMaxIndices) == false)
+            {
+                AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "One or more of the point indices of the members, forces and/or supports inputs are out of bounds!");
+                noErrors = false;
             }
 
-            for (int i = 0; i < iSupportIndices.Count; i++)
+
+            if (noErrors)
             {
-                if (iSupportHorizontals[i])
+
+                for (int i = 0; i < iJoints.Count; i++)
+                    myJoints.Add(new Joint(iJoints[i]));
+
+                for (int i = 0; i < iForceIndices.Count; i++)
                 {
-                    mySupportVector = yPositive;
-                    mySupportVector.Rotate(iSupportRotations[i] / 180.0 * Math.PI, zPostive);
-                    mySupportVector.Rotate(-0.5 * Math.PI, zPostive);
-                    SupportReaction mySupportReaction = new SupportReaction(iSupportIndices[i], iJoints, mySupportVector);
-                    mySupportReactions.Add(mySupportReaction);
-                    initialSupportLinesForm.Add(mySupportReaction.FormLine);
+                    ExternalForce myExternalForce = new ExternalForce(iForceIndices[i], iJoints, yNegative, iForceRotations[i], iForceMagnitudes[i] / iScalingFactor);
+                    myExternalForce.LengthenFormLines(ratio);
+                    myExternalForces.Add(myExternalForce);
+                    oExtForceLinesForm.Add(myExternalForce.FormLine);
                 }
 
-                if (iSupportVerticals[i])
+                for (int i = 0; i < iSupportIndices.Count; i++)
                 {
-                    mySupportVector = yPositive;
-                    mySupportVector.Rotate(iSupportRotations[i] / 180.0 * Math.PI, zPostive);
-                    SupportReaction mySupportReaction = new SupportReaction(iSupportIndices[i], iJoints, mySupportVector);
-                    mySupportReactions.Add(mySupportReaction);
-                    initialSupportLinesForm.Add(mySupportReaction.FormLine);
+                    if (iSupportHorizontals[i])
+                    {
+                        mySupportVector = yPositive;
+                        mySupportVector.Rotate(iSupportRotations[i] / 180.0 * Math.PI, zPostive);
+                        mySupportVector.Rotate(-0.5 * Math.PI, zPostive);
+                        SupportReaction mySupportReaction = new SupportReaction(iSupportIndices[i], iJoints, mySupportVector);
+                        mySupportReactions.Add(mySupportReaction);
+                        initialSupportLinesForm.Add(mySupportReaction.FormLine);
+                    }
+
+                    if (iSupportVerticals[i])
+                    {
+                        mySupportVector = yPositive;
+                        mySupportVector.Rotate(iSupportRotations[i] / 180.0 * Math.PI, zPostive);
+                        SupportReaction mySupportReaction = new SupportReaction(iSupportIndices[i], iJoints, mySupportVector);
+                        mySupportReactions.Add(mySupportReaction);
+                        initialSupportLinesForm.Add(mySupportReaction.FormLine);
+                    }
                 }
-            }
 
-            Resultant myResultant = new Resultant(iStartForceDiagram, myExternalForces, ratio, averagePointJoints);
-            oResultantLineForce = myResultant.ResultantForce;
-            oResultantLineForm = myResultant.ResultantForm;
-            oExtForceLinesForce = myResultant.ForceLinesForce;
+                Resultant myResultant = new Resultant(iStartForceDiagram, myExternalForces, ratio, averagePointJoints);
+                oResultantLineForce = myResultant.ResultantForce;
+                oResultantLineForm = myResultant.ResultantForm;
+                oExtForceLinesForce = myResultant.ForceLinesForce;
 
-            GlobalDiagram myGlobalDiagram = new GlobalDiagram(myResultant, mySupportReactions);
-            List<Member> myVirtMembers = myGlobalDiagram.Members();
-            List<HalfMember> myHalfMembers = myGlobalDiagram.HalfMembersForm;
-            myResultant.ResultantForAngle(myGlobalDiagram);
+                for (int i = 0; i < mySupportReactions.Count; i++)
+                {
+
+                    if((mySupportReactions[i].JointIndex != mySupportReactions[(i+1)%mySupportReactions.Count].JointIndex) && (mySupportReactions[i].JointIndex != mySupportReactions[(i+2)%mySupportReactions.Count].JointIndex))
+                    {
+                        if (mySupportReactions[i].FormLine.DistanceTo(mySupportReactions[(i + 1) % 3].Joint, false) == 0)
+                        {
+                            AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "unstable structure: 2 support reactions act in the same line!");
+                            noErrors = false;
+                            break;
+                        }
+                    }
+                }
+
+                if (iSupportIndices.Count != 2)
+                {
+                    AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "invalid structure: only designs with 2 supports are supported in the current version of this tool!");
+                    noErrors = false;
+                }
+
+                int degreeOfExtDeterminacy = functions.ExternalStaticDeterminacy(mySupportReactions.Count, 3);
+                if (degreeOfExtDeterminacy < 0)
+                {
+                    AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "global structure is unstable!");
+                    noErrors = false;
+                }
+                else if (degreeOfExtDeterminacy > 0)
+                {
+                    AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "global structure is statically indeterminate!");
+                    noErrors = false;
+                }
+
+                if(noErrors)
+                {
+
+                    GlobalDiagram myGlobalDiagram = new GlobalDiagram(myResultant, mySupportReactions);
+                    List<Member> myVirtMembers = myGlobalDiagram.Members();
+                    List<HalfMember> myHalfMembers = myGlobalDiagram.HalfMembersForm;
+                    myResultant.ResultantForAngle(myGlobalDiagram);
+
+                    for (int i = 0; i < myVirtMembers.Count; i++)
+                        oMemberLinesForm.Add(myVirtMembers[i].MemberLine);
+
+                    for (int i = 0; i < mySupportReactions.Count; i++)
+                        mySupportReactions[i].SupportLineForAngle(myHalfMembers);
+
+                    for (int i = 0; i < myGlobalDiagram.GlobalJoints.Count; i++)
+                    {
+                        myGlobalDiagram.SolveForceDiagram(myVirtMembers);
+                    }
+
+                    for (int i = 0; i < myVirtMembers.Count; i++)
+                        oVirtMemberLinesForce.Add(myVirtMembers[i].ForceLine);
+
+                    for (int i = 0; i < mySupportReactions.Count; i++)
+                    {
+                        oSupportLinesForce.Add(mySupportReactions[i].ForceLine);
+                        double supportLengthForm = mySupportReactions[i].Force * ratio;
+                        double extendValue = supportLengthForm - 1.0;
+                        mySupportReactions[i].FormLine.Extend(extendValue, 0);
+                        initialSupportLinesForm[i] = mySupportReactions[i].FormLine;
+                        if (mySupportReactions[i].PositiveForce)
+                            mySupportReactions[i].FormLine.Flip();
+
+                        oSupportLinesForm.Add(mySupportReactions[i].FormLine);
+                    }
+
+                    List<Line> formLinesForTextTag = new List<Line>();
+
+                    for (int i = 0; i < mySupportReactions.Count; i++)
+                    {
+                        formLinesForTextTag.Add(initialSupportLinesForm[i]);
+                        oForceMagnitudes.Add(Math.Round(mySupportReactions[i].Force * iScalingFactor));
+
+                    }
+                    for (int i = 0; i < myExternalForces.Count; i++)
+                    {
+                        formLinesForTextTag.Add(oExtForceLinesForm[i]);
+                        oForceMagnitudes.Add(Math.Round(myExternalForces[i].Force * iScalingFactor));
+                    }
+                    formLinesForTextTag.Add(oResultantLineForm);
+                    oForceMagnitudes.Add(Math.Round(myResultant.Force * iScalingFactor));
+                    functions.DisplayNumericalValues(formLinesForTextTag, out oLocationsForceTextTags);
 
 
 
-            for (int i = 0; i < myVirtMembers.Count; i++)
-                oMemberLinesForm.Add(myVirtMembers[i].MemberLine);
+                    List<Line> memberLinesForm = new List<Line>();
+                    List<Member> allMembers = new List<Member>();
 
-            for (int i = 0; i < mySupportReactions.Count; i++)
-                mySupportReactions[i].SupportLineForAngle(myHalfMembers);
+                    for (int i = 0; i < iMemberStartIndices.Count; i++)
+                    {
+                        allMembers.Add(new Member(iMemberStartIndices[i], iMemberEndIndices[i], iJoints));
+                        memberLinesForm.Add(allMembers[i].MemberLine);
+                        oMemberColors.Add(Color.FromName("Black"));
+                    }
 
-            for (int i = 0; i < myGlobalDiagram.GlobalJoints.Count ; i++)
-            {
-                myGlobalDiagram.SolveForceDiagram(myVirtMembers);
-            }
+                    if (iDisplayOption == 0)
+                    {
+                        oMemberLinesForm = memberLinesForm;
+                        oVirtMemberLinesForce = new List<Line>();
+                    }
+                    if (iDisplayOption == 1)
+                    {
+                        functions.DisplayColors(myVirtMembers, out oMemberColors);
 
-            for (int i = 0; i < myVirtMembers.Count; i++)
-                oVirtMemberLinesForce.Add(myVirtMembers[i].ForceLine);
+                    }
+                    if (iDisplayOption == 2)
+                    {
+                        functions.DisplayRectangles(myVirtMembers, myScalingFactorUnified, out oDisplayBreps);
+                        functions.DisplayColors(myVirtMembers, out oMemberColors);
+                    }
 
-            for (int i = 0; i < mySupportReactions.Count; i++)
-            {
-                oSupportLinesForce.Add(mySupportReactions[i].ForceLine);
-                double supportLengthForm = mySupportReactions[i].Force * ratio;
-                double extendValue = supportLengthForm - 1.0;
-                mySupportReactions[i].FormLine.Extend(extendValue, 0);
-                initialSupportLinesForm[i] = mySupportReactions[i].FormLine;
-                if (mySupportReactions[i].PositiveForce)
-                    mySupportReactions[i].FormLine.Flip();
+                    if (iDisplayForceDiagram == false)
+                    {
+                        oExtForceLinesForce = new List<Line>();
+                        oResultantLineForce = new Line();
+                        oSupportLinesForce = new List<Line>();
+                        oVirtMemberLinesForce = new List<Line>();
+                    }
 
-                oSupportLinesForm.Add(mySupportReactions[i].FormLine);
-            }
-
-            List<Line> formLinesForTextTag = new List<Line>();
-
-            for (int i = 0; i < mySupportReactions.Count; i++)
-            {
-                formLinesForTextTag.Add(initialSupportLinesForm[i]);
-                oForceMagnitudes.Add(Math.Round(mySupportReactions[i].Force * iScalingFactor));
-
-            }
-            for (int i = 0; i < myExternalForces.Count; i++)
-            {
-                formLinesForTextTag.Add(oExtForceLinesForm[i]);
-                oForceMagnitudes.Add(Math.Round(myExternalForces[i].Force * iScalingFactor));
-            }
-            formLinesForTextTag.Add(oResultantLineForm);
-            oForceMagnitudes.Add(Math.Round(myResultant.Force * iScalingFactor));
-            functions.DisplayNumericalValues(formLinesForTextTag, out oLocationsForceTextTags);
-
-
-            List<Brep> oDisplayBreps = new List<Brep>();
-            List<Color> oMemberColors = new List<Color>();
-            List<Line> memberLinesForm = new List<Line>();
-            List<Member> allMembers = new List<Member>();
-            
-            for (int i = 0; i < iMemberStartIndices.Count; i++)
-            {
-                allMembers.Add(new Member(iMemberStartIndices[i], iMemberEndIndices[i], iJoints));
-                memberLinesForm.Add(allMembers[i].MemberLine);
-                oMemberColors.Add(Color.FromName("Black"));
-            }
-
-            if (iDisplayOption == 0)
-            {
-                oMemberLinesForm = memberLinesForm;
-                oVirtMemberLinesForce = new List<Line>();
-            }
-            if (iDisplayOption == 1)
-            {
-                functions.DisplayColors(myVirtMembers, out oMemberColors);
-
-            }
-            if (iDisplayOption == 2)
-            {
-                functions.DisplayRectangles(myVirtMembers, myScalingFactorUnified, out oDisplayBreps);
-                functions.DisplayColors(myVirtMembers, out oMemberColors);
-            }
-
-            if (iDisplayForceDiagram == false)
-            {
-                oExtForceLinesForce = new List<Line>();
-                oResultantLineForce = new Line();
-                oSupportLinesForce = new List<Line>();
-                oVirtMemberLinesForce = new List<Line>();
-            }
-
-            if(iDisplayNumericalValues == false)
-            {
-                oLocationsForceTextTags = new List<Plane>();
+                    if (iDisplayNumericalValues == false)
+                    {
+                        oLocationsForceTextTags = new List<Plane>();
+                    }
+                }
             }
 
             DA.SetDataList(0, oSupportLinesForm);
