@@ -150,7 +150,11 @@ namespace GHPlugin
 
             for (int i = 0; i < members.Count; i++)
             {
-                thickness = members[i].Force * scalingFactorUnified;
+                if(members[i].Force == 0)
+                    thickness = 1e-10;
+                else
+                    thickness = members[i].Force * scalingFactorUnified;
+                
                 //thickness = 1;
                 point1 = members[i].MemberLine.From;
                 point2 = members[i].MemberLine.To;
@@ -169,7 +173,7 @@ namespace GHPlugin
 
                 rectangle = new Rectangle3d(planeXY, point1, point2);
                 PolylineCurve curveRectangle = rectangle.ToPolyline().ToPolylineCurve();
-                breps.Add(Brep.CreatePlanarBreps(curveRectangle, 0.000001)[0]);
+                breps.Add(Brep.CreatePlanarBreps(curveRectangle, 1e-11)[0]);
             }
 
             oBreps = breps;

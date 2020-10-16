@@ -160,25 +160,40 @@ namespace GHPlugin
                 myAnglesUnknownLines.Add(Vector3d.VectorAngle(positiveY, iUnknownForceLines[i].Direction, planeXY));
             }
 
-            for (int i = 0; i < (iUnknownForceLines.Count + iKnownForceLinesForAngles.Count); i++)
+            if (iKnownForceLinesForAngles.Count != 0)
             {
-                if (myAnglesUnknownLines.Count == 0)
+                for (int i = 0; i < (iUnknownForceLines.Count + iKnownForceLinesForAngles.Count); i++)
                 {
-                    int _1 = myAnglesKnownLines.IndexOf(myAnglesKnownLines.Min());
-                    oKnownForceLinesOrder[_1] = i;
-                    myAnglesKnownLines[_1] = 400;
+                    if (myAnglesUnknownLines.Count == 0)
+                    {
+                        int _1 = myAnglesKnownLines.IndexOf(myAnglesKnownLines.Min());
+                        oKnownForceLinesOrder[_1] = i;
+                        myAnglesKnownLines[_1] = 400;
+                    }
+                    else if (myAnglesKnownLines.Min() < myAnglesUnknownLines.Min())
+                    {
+                        int _1 = myAnglesKnownLines.IndexOf(myAnglesKnownLines.Min());
+                        oKnownForceLinesOrder[_1] = i;
+                        myAnglesKnownLines[_1] = 400;
+                    }
+                    else
+                    {
+                        int _1 = myAnglesUnknownLines.IndexOf(myAnglesUnknownLines.Min());
+                        oUnknownForceLinesOrder[_1] = i;
+                        myAnglesUnknownLines[_1] = 400;
+                    }
                 }
-                else if (myAnglesKnownLines.Min() < myAnglesUnknownLines.Min())
+            }
+            else
+            {
+                for (int i = 0; i < (iUnknownForceLines.Count + iKnownForceLinesForAngles.Count); i++)
                 {
-                    int _1 = myAnglesKnownLines.IndexOf(myAnglesKnownLines.Min());
-                    oKnownForceLinesOrder[_1] = i;
-                    myAnglesKnownLines[_1] = 400;
-                }
-                else
-                {
-                    int _1 = myAnglesUnknownLines.IndexOf(myAnglesUnknownLines.Min());
-                    oUnknownForceLinesOrder[_1] = i;
-                    myAnglesUnknownLines[_1] = 400;
+                    if (myAnglesUnknownLines.Count != 0)
+                    {
+                        int _1 = myAnglesUnknownLines.IndexOf(myAnglesUnknownLines.Min());
+                        oUnknownForceLinesOrder[_1] = i;
+                        myAnglesUnknownLines[_1] = 400;
+                    }
                 }
             }
 

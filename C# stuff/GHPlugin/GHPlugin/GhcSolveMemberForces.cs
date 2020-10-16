@@ -55,16 +55,16 @@ namespace GHPlugin
             pManager.AddLineParameter("External Forces Force Joints", "Ext. Forces Force Joints", "The lines of the external forces in the force diagram per joint!", GH_ParamAccess.list);
             pManager.AddLineParameter("Members Force Joints", "Members Force Joints", "The lines of the members in the global force diagram per joint!", GH_ParamAccess.list);
 
-            pManager.AddLineParameter("Supports Force", "Supports Force", "The lines of the supports reactions in the overall force diagram", GH_ParamAccess.list);
+            pManager.AddLineParameter("Supports Force", "Supports Force", "The lines of the supports reactions in the overall force diagram!", GH_ParamAccess.list);
             pManager.AddLineParameter("External Forces Force", "Ext. Forces Force", "The lines of the external forces in the overall force diagram!", GH_ParamAccess.list);
             pManager.AddLineParameter("Members Force", "Members Force", "The lines of the members in the global overall force diagram!", GH_ParamAccess.list);
 
-            pManager.AddBrepParameter("Members unified diagram", "Members unified diagram", "Member geometry to display for the unified diagram", GH_ParamAccess.list);
+            pManager.AddBrepParameter("Members unified diagram", "Members unified diagram", "Member geometry to display for the unified diagram!", GH_ParamAccess.list);
             pManager.AddColourParameter("Colour Global Members", "Colour Global Members", "The colours of global members: blue for compression, red for tension!", GH_ParamAccess.list);
 
-            pManager.AddNumberParameter("Force Magnitudes Supports", "Force Magnitude Supports", "The magnitude of the support reactions!", GH_ParamAccess.list);
-            pManager.AddPlaneParameter("Locations Text Tag", "Locations Text Tag", "Locations as planes for the numerical force value 3D text tags", GH_ParamAccess.list);
-            pManager.AddPlaneParameter("Locations Joint Force Diagrams", "Locations Joints", "Locations as planes of the start points of the force diagram of each joint", GH_ParamAccess.list);
+            pManager.AddNumberParameter("Force Magnitudes", "Force Magnitude", "The magnitude of forces in all members, supports and external forces, in that order!", GH_ParamAccess.list);
+            pManager.AddPlaneParameter("Locations Text Tag", "Locations Text Tag", "Locations as planes for the numerical force value 3D text tags!", GH_ParamAccess.list);
+            pManager.AddPlaneParameter("Locations Joint Force Diagrams", "Locations Joints", "Locations as planes of the start points of the force diagram of each joint!", GH_ParamAccess.list);
         }
 
         protected override void SolveInstance(IGH_DataAccess DA)
