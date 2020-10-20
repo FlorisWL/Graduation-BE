@@ -60,7 +60,7 @@ namespace GHPlugin
             pManager.AddLineParameter("Members Force", "Members Force", "The lines of the members in the global overall force diagram!", GH_ParamAccess.list);
 
             pManager.AddBrepParameter("Members unified diagram", "Members unified diagram", "Member geometry to display for the unified diagram!", GH_ParamAccess.list);
-            pManager.AddColourParameter("Colour Global Members", "Colour Global Members", "The colours of global members: blue for compression, red for tension!", GH_ParamAccess.list);
+            pManager.AddColourParameter("Colour Members", "Colour Members", "The colours of all the members: blue for compression, red for tension!", GH_ParamAccess.list);
 
             pManager.AddNumberParameter("Force Magnitudes", "Force Magnitude", "The magnitude of forces in all members, supports and external forces, in that order!", GH_ParamAccess.list);
             pManager.AddPlaneParameter("Locations Text Tag", "Locations Text Tag", "Locations as planes for the numerical force value 3D text tags!", GH_ParamAccess.list);

@@ -62,6 +62,7 @@
     <Compile Include="GhcDisplayGlobalForces.cs" />
     <Compile Include="GhcSolveMemberForces.cs" />
     <Compile Include="GhcSolveMemberForces_old.cs" />
+    <Compile Include="GhcFitnessFunction.cs" />
     <Compile Include="Old\GhcCreateExternalForce.cs" />
     <Compile Include="Old\GhcCreateSupportReaction.cs" />
     <Compile Include="GhcSolveGlobalForces.cs" />
