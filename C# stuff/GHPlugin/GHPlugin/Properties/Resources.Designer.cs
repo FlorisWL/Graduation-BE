@@ -93,6 +93,16 @@ namespace GHPlugin.Properties {
         /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Bitmap.
         /// </summary>
+        internal static System.Drawing.Bitmap icon_computefitness {
+            get {
+                object obj = ResourceManager.GetObject("icon_computefitness", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
         internal static System.Drawing.Bitmap icon_solveglobal {
             get {
                 object obj = ResourceManager.GetObject("icon_solveglobal", resourceCulture);

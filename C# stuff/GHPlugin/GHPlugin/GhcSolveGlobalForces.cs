@@ -16,7 +16,7 @@ namespace GHPlugin
         public GhcSolveGlobalForces()
           : base("Solve Global Forces", "Solve Global",
               "Solve the global force diagram!",
-              "GS tool", "Graphic Statics")
+              "GSDesign", "2D Graphic Statics")
         {
         }
 
