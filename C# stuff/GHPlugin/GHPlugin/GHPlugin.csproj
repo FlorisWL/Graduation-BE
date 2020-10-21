@@ -59,12 +59,8 @@
     <Compile Include="ExternalForce.cs" />
     <Compile Include="Functions.cs" />
     <Compile Include="GeneralDiagram.cs" />
-    <Compile Include="GhcDisplayGlobalForces.cs" />
     <Compile Include="GhcSolveMemberForces.cs" />
-    <Compile Include="GhcSolveMemberForces_old.cs" />
     <Compile Include="GhcFitnessFunction.cs" />
-    <Compile Include="Old\GhcCreateExternalForce.cs" />
-    <Compile Include="Old\GhcCreateSupportReaction.cs" />
     <Compile Include="GhcSolveGlobalForces.cs" />
     <Compile Include="GlobalDiagram.cs" />
     <Compile Include="HalfMember.cs" />
@@ -73,13 +69,6 @@
     <Compile Include="Resultant.cs" />
     <Compile Include="ResultantSimple.cs" />
     <Compile Include="SupportReaction.cs" />
-    <Compile Include="Try outs\GhcCreatePyramid.cs" />
-    <Compile Include="Old\GhcCreateMember.cs" />
-    <Compile Include="Try outs\Pyramid.cs" />
-    <Compile Include="Try outs\GhcAverage.cs" />
-    <Compile Include="Try outs\GhcCentroid.cs" />
-    <Compile Include="Try outs\GhcMovingParticle.cs" />
-    <Compile Include="Try outs\GhcFirstPluginComponent.cs" />
     <Compile Include="GHPluginInfo.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Properties\Resources.Designer.cs">
@@ -95,25 +84,10 @@
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
-    <None Include="Resources\avg_icon.png" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Resources\first_icon.png" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Resources\centroid_icon.png" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Resources\movingparticle_icon.png" />
-  </ItemGroup>
-  <ItemGroup>
     <None Include="Resources\icon_solveglobal.png" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\icon_solvemembers.png" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Resources\fitness_icon.bmp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\icon_computefitness.png" />

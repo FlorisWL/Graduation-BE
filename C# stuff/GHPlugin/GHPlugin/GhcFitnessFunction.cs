@@ -61,8 +61,8 @@ namespace GHPlugin
             double iPenaltyTension = 1.0;
             double iMaxLengthCompression = 0.0;
 
-            double oFitnessManipulated = 2.0;
-            double oFitnessPure = 1.0;
+            double oFitnessManipulated;
+            double oFitnessPure; ;
 
             DA.GetDataList(0,iMembersForm);
             DA.GetDataList(1,iForceMagnitudes);
@@ -133,7 +133,7 @@ namespace GHPlugin
             oFitnessManipulated = memberLengthsXForcesWeighted.Sum();
 
             if ((FreeAreasBreached) || (MaxCompressionLengthExceeded))
-                oFitnessManipulated = oFitnessManipulated * 1e6;
+                oFitnessManipulated *= 1e6;
 
 
             DA.SetData(0, oFitnessManipulated);

@@ -135,7 +135,6 @@ namespace GHPlugin
             List<ExternalForce> myExternalForces = new List<ExternalForce>();
             List<SupportReaction> mySupportReactions = new List<SupportReaction>();
             double ratio = 1.0 / 3.0;
-            double myScalingFactorUnified = ratio / 3.0;
             Vector3d zPostive = new Vector3d(0, 0, 1);
             Vector3d yPositive = new Vector3d(0, 1, 0);
             Vector3d yNegative = new Vector3d(0, -1, 0);
@@ -296,13 +295,11 @@ namespace GHPlugin
                     if (degreeOfIntDeterminacy < 0)
                     {
                         AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "internal truss structure is unstable!");
-                        noErrors = false;
                         oMemberColors.Add(Color.FromName("Black"));
                     }
                     else if (degreeOfIntDeterminacy > 0)
                     {
                         AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "internal truss structure is statically undeterminate!");
-                        noErrors = false;
                         oMemberColors.Add(Color.FromName("Black"));
                     }
                     else
@@ -386,7 +383,7 @@ namespace GHPlugin
 
                         if (iDisplayNumericalValues)
                         {
-                            List<Plane> tempLocations = new List<Plane>();
+                            List<Plane> tempLocations;
                             functions.DisplayNumericalValues(oMemberLinesForm, out tempLocations);
                             for (int i = 0; i < tempLocations.Count; i++)
                                 oLocationsForceTextTags.Add(tempLocations[i]);
