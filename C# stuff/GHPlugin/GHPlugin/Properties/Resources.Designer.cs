@@ -63,36 +63,6 @@ namespace GHPlugin.Properties {
         /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Bitmap.
         /// </summary>
-        internal static System.Drawing.Bitmap avg_icon {
-            get {
-                object obj = ResourceManager.GetObject("avg_icon", resourceCulture);
-                return ((System.Drawing.Bitmap)(obj));
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized resource of type System.Drawing.Bitmap.
-        /// </summary>
-        internal static System.Drawing.Bitmap centroid_icon {
-            get {
-                object obj = ResourceManager.GetObject("centroid_icon", resourceCulture);
-                return ((System.Drawing.Bitmap)(obj));
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized resource of type System.Drawing.Bitmap.
-        /// </summary>
-        internal static System.Drawing.Bitmap first_icon {
-            get {
-                object obj = ResourceManager.GetObject("first_icon", resourceCulture);
-                return ((System.Drawing.Bitmap)(obj));
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized resource of type System.Drawing.Bitmap.
-        /// </summary>
         internal static System.Drawing.Bitmap icon_computefitness {
             get {
                 object obj = ResourceManager.GetObject("icon_computefitness", resourceCulture);
@@ -116,16 +86,6 @@ namespace GHPlugin.Properties {
         internal static System.Drawing.Bitmap icon_solvemembers {
             get {
                 object obj = ResourceManager.GetObject("icon_solvemembers", resourceCulture);
-                return ((System.Drawing.Bitmap)(obj));
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized resource of type System.Drawing.Bitmap.
-        /// </summary>
-        internal static System.Drawing.Bitmap movingparticle_icon {
-            get {
-                object obj = ResourceManager.GetObject("movingparticle_icon", resourceCulture);
                 return ((System.Drawing.Bitmap)(obj));
             }
         }

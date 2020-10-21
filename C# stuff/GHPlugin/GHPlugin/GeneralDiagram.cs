@@ -384,7 +384,6 @@ namespace GHPlugin
         {
             //create overall force diagram
             int solvedJoints = 0;
-            Point3d startPoint = DummyPoint;
             Vector3d tranformationVector = new Vector3d(DummyPoint);
             tranformationVector -= new Vector3d(AllJoints[0].InitSolveLocation);
 
@@ -604,8 +603,6 @@ namespace GHPlugin
                             AllSupportReactions[correspondingSupportIndices[j]].Known = true;
                         }
                     }
-                    else
-                        //message: Print("Error: system is unstable! Try changing the support reactions.");
 
                     return;
 
