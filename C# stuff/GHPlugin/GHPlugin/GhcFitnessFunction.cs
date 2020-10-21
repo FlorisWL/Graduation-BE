@@ -17,7 +17,7 @@ namespace GHPlugin
         public GhcFitnessFunction()
           : base("Compute Fitness Function", "Fitness Function",
               "Compute a basic fitness function based on the total load path SUM(F*L), which could be used as a target for optimization",
-              "GS tool", "Graphic Statics")
+              "GSDesign", "2D Graphic Statics")
         {
         }
 
@@ -149,7 +149,7 @@ namespace GHPlugin
             {
                 //You can add image files to your project resources and access them like this:
                 // return Resources.IconForThisComponent;
-                return null;
+                return Properties.Resources.icon_computefitness;
             }
         }
 

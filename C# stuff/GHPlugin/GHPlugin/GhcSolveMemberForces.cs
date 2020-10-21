@@ -16,7 +16,7 @@ namespace GHPlugin
         public GhcSolveMemberForces()
           : base("Solve Member Forces", "Solve Members",
               "Solve all forces in the structure!",
-              "GS tool", "Graphic Statics")
+              "GSDesign", "2D Graphic Statics")
         {
         }
 
