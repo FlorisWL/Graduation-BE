@@ -29,11 +29,11 @@ namespace GHPlugin
             pManager.AddIntegerParameter("Member Start Indices", "Members Start", "The joint indices of the start points of the members!", GH_ParamAccess.list);
             pManager.AddIntegerParameter("Member End Indices", "Members End", "The joint indices of the end points of the members!", GH_ParamAccess.list);
 
-            pManager.AddIntegerParameter("Force: Indices", "Force: Index", "The indices in the Joints list where an external force should be applied!",GH_ParamAccess.list);
+            pManager.AddIntegerParameter("Force: Indices", "Force: Indices", "The indices in the Joints list where an external force should be applied!",GH_ParamAccess.list);
             pManager.AddNumberParameter("Force: Magnitudes", "Force: Magnitude", "The magnitude of the external forces!", GH_ParamAccess.list);
             pManager.AddNumberParameter("Force: Rotations", "Force: Rotation", "The rotation in degrees of the external forces!",GH_ParamAccess.list,0);
 
-            pManager.AddIntegerParameter("Support: Indices", "Support: Index", "The indices in the Joints list where a support must be placed!", GH_ParamAccess.list);
+            pManager.AddIntegerParameter("Support: Indices", "Support: Indices", "The indices in the Joints list where a support must be placed!", GH_ParamAccess.list);
             pManager.AddBooleanParameter("Support: Horizontal Constraints", "Support: Horizontal", "Place a horizontal support at the given node!",GH_ParamAccess.list);
             pManager.AddBooleanParameter("Support: Vertical Constraints", "Support: Vertical", "Place a vertical support at the given node!",GH_ParamAccess.list);
             pManager.AddNumberParameter("Support: Rotations", "Support: Rotation", "The rotation in degrees of the base of the support!",GH_ParamAccess.list,0);
@@ -59,11 +59,11 @@ namespace GHPlugin
             pManager.AddLineParameter("External Forces Force", "Ext. Forces Force", "The lines of the external forces in the overall force diagram!", GH_ParamAccess.list);
             pManager.AddLineParameter("Members Force", "Members Force", "The lines of the members in the global overall force diagram!", GH_ParamAccess.list);
 
-            pManager.AddBrepParameter("Members unified diagram", "Members unified diagram", "Member geometry to display for the unified diagram!", GH_ParamAccess.list);
-            pManager.AddColourParameter("Colour Members", "Colour Members", "The colours of all the members: blue for compression, red for tension!", GH_ParamAccess.list);
+            pManager.AddBrepParameter("Members Unified Diagram", "Members Unified Diagram", "Member geometry to display for the unified diagram!", GH_ParamAccess.list);
+            pManager.AddColourParameter("Color Members", "Color Members", "The colors of all the members: blue for compression, red for tension!", GH_ParamAccess.list);
 
             pManager.AddNumberParameter("Force Magnitudes", "Force Magnitude", "The magnitude of forces in all members, supports and external forces, in that order!", GH_ParamAccess.list);
-            pManager.AddPlaneParameter("Locations Text Tag", "Locations Text Tag", "Locations as planes for the numerical force value 3D text tags!", GH_ParamAccess.list);
+            pManager.AddPlaneParameter("Locations Text Tags", "Locations Text Tags", "Locations as planes for the numerical force value 3D text tags!", GH_ParamAccess.list);
             pManager.AddPlaneParameter("Locations Joint Force Diagrams", "Locations Joints", "Locations as planes of the start points of the force diagram of each joint!", GH_ParamAccess.list);
         }
 
@@ -160,6 +160,13 @@ namespace GHPlugin
 
             bool noErrors = true;
 
+            List<Member> allMembers = new List<Member>();
+            for (int i = 0; i < iMemberStartIndices.Count; i++)
+            {
+                allMembers.Add(new Member(iMemberStartIndices[i], iMemberEndIndices[i], iJoints));
+                oMemberLinesForm.Add(allMembers[i].FormLine);
+            }
+
             if (functions.MatchingInputs(supportInputLengths) == false)
             {
                 AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "Support related inputs don't have matching list lengths!");
@@ -225,7 +232,7 @@ namespace GHPlugin
                     {
                         if (mySupportReactions[i].FormLine.DistanceTo(mySupportReactions[(i + 1) % 3].Joint, false) == 0)
                         {
-                            AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "unstable structure: 2 support reactions act in the same line!");
+                            AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "unstable structure: two support reactions act in the same line!");
                             noErrors = false;
                             break;
                         }
@@ -234,7 +241,7 @@ namespace GHPlugin
 
                 if (iSupportIndices.Count != 2)
                 {
-                    AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "invalid structure: only designs with 2 supports are supported in the current version of this tool!");
+                    AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "invalid structure: only designs with exactly two supports are supported in the current version of this tool!");
                     noErrors = false;
                 }
 
@@ -258,7 +265,7 @@ namespace GHPlugin
                     Resultant myResultant = new Resultant(iStartForceDiagram, myExternalForces, ratio, averagePointJoints);
                     GlobalDiagram myGlobalDiagram = new GlobalDiagram(myResultant, mySupportReactions);
                     List<Member> myVirtMembers = myGlobalDiagram.Members();
-                    List<HalfMember> myHalfMembers = myGlobalDiagram.HalfMembersForm;
+                    List<HalfMember> myHalfMembers = myGlobalDiagram.GlobalHalfMembers;
 
                     for (int i = 0; i < mySupportReactions.Count; i++)
                         mySupportReactions[i].SupportLineForAngle(myHalfMembers);
@@ -283,14 +290,6 @@ namespace GHPlugin
 
                     //Solve Member Forces
 
-                    List<Member> allMembers = new List<Member>();
-
-                    for (int i = 0; i < iMemberStartIndices.Count; i++)
-                    {
-                        allMembers.Add(new Member(iMemberStartIndices[i], iMemberEndIndices[i], iJoints));
-                        oMemberLinesForm.Add(allMembers[i].MemberLine);
-                    }
-
                     int degreeOfIntDeterminacy = functions.InternalStaticDeterminacy(iMemberStartIndices.Count, mySupportReactions.Count, iJoints.Count);
                     if (degreeOfIntDeterminacy < 0)
                     {
@@ -299,7 +298,7 @@ namespace GHPlugin
                     }
                     else if (degreeOfIntDeterminacy > 0)
                     {
-                        AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "internal truss structure is statically undeterminate!");
+                        AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "internal truss structure is statically indeterminate!");
                         oMemberColors.Add(Color.FromName("Black"));
                     }
                     else

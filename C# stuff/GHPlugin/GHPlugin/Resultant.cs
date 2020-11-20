@@ -11,13 +11,13 @@ namespace GHPlugin
     public class Resultant
     {
         public Point3d StartPointForce;
+        public Point3d PointForm;
         public List<ExternalForce> ExternalForces;
         public List<Line> ForceLinesForce;
-        public Line ResultantForce;
-        public double Force = 0.0;
-        public Line ResultantForceForAngle;
-        public Point3d PointForm;
         public Line ResultantForm;
+        public Line ResultantForce;
+        public Line ResultantForceForAngle;
+        public double Force = 0.0;
 
 
         public Resultant(Point3d startPointForce, List<ExternalForce> externalForces, double ratio, Point3d centerPoint)
@@ -44,56 +44,72 @@ namespace GHPlugin
             Point3d arbitraryPoint = startPoint + arbitraryVector;
             PointForm = arbitraryPoint;
             
-
-            List<Line> globalForceLines2 = new List<Line>();
-            List<Line> globalForceLines1 = new List<Line>();
-            List<Vector3d> globalForceVectors2 = new List<Vector3d>();
-            List<Vector3d> globalForceVectors1 = new List<Vector3d>();
-
-            globalForceLines2.Add(new Line(ResultantForce.To, arbitraryPoint));
-            globalForceLines2.Add(new Line(arbitraryPoint, ResultantForce.From));
-            globalForceVectors2.Add(new Vector3d(globalForceLines2[0].Direction));
-            globalForceVectors2.Add(new Vector3d(globalForceLines2[1].Direction));
-
-            for (int i = 0; i < externalForces.Count - 1; i++)
-            {
-                globalForceLines1.Add(new Line(forceLinesForce[i].To, arbitraryPoint));
-                globalForceVectors1.Add(new Vector3d(globalForceLines1[i].Direction));
-            }
-
             //Translation to form diagram:
-            Line lineA = new Line(externalForces[0].FormLine.To, globalForceVectors1[0]);
-            Line lineB;
-            double pA;
-            double pB;
-            Point3d parameterPoint;
-            Point3d resultantPoint;
 
-            for (int i = 0; i < externalForces.Count - 1; i++)
+            if (externalForces.Count == 1)
             {
-                lineB = externalForces[i+1].FormLine;
-                Intersection.LineLine(lineA, lineB, out pA, out pB);
-                parameterPoint = lineA.PointAt(pA);
-                if (i < externalForces.Count - 2)
+                resultantVector = externalForces[0].FormLine.Direction;
+                resultantVector.Unitize();
+                resultantVector.Reverse();
+                Line resultantLine = new Line(externalForces[0].FormLine.From, resultantVector);
+                resultantLine.Flip();
+                double forceLengthForm = Force * ratio;
+                double extendValue = forceLengthForm - 1.0;
+                resultantLine.Extend(extendValue, 0);
+                resultantLine.Extend(-0.2315901, -0.2315901); //this is just a random number to make it extremely unlikely that the action point of the resultant force falls exactly on the line between the supports.
+                ResultantForm = resultantLine;
+            }
+            else
+            {
+                List<Line> globalForceLines2 = new List<Line>();
+                List<Line> globalForceLines1 = new List<Line>();
+                List<Vector3d> globalForceVectors2 = new List<Vector3d>();
+                List<Vector3d> globalForceVectors1 = new List<Vector3d>();
+
+                globalForceLines2.Add(new Line(ResultantForce.To, arbitraryPoint));
+                globalForceLines2.Add(new Line(arbitraryPoint, ResultantForce.From));
+                globalForceVectors2.Add(new Vector3d(globalForceLines2[0].Direction));
+                globalForceVectors2.Add(new Vector3d(globalForceLines2[1].Direction));
+
+                for (int i = 0; i < externalForces.Count - 1; i++)
                 {
-                    lineA = new Line(parameterPoint, globalForceVectors1[i + 1]);
+                    globalForceLines1.Add(new Line(forceLinesForce[i].To, arbitraryPoint));
+                    globalForceVectors1.Add(new Vector3d(globalForceLines1[i].Direction));
                 }
-                else
+
+                Line lineA = new Line(externalForces[0].FormLine.To, globalForceVectors1[0]);
+                Line lineB;
+                double pA;
+                double pB;
+                Point3d parameterPoint;
+                Point3d resultantPoint;
+
+                for (int i = 0; i < externalForces.Count - 1; i++)
                 {
-                    lineA = new Line(parameterPoint, globalForceVectors2[0]);
-                    lineB = new Line(externalForces[0].FormLine.To, globalForceVectors2[1]);
+                    lineB = externalForces[i + 1].FormLine;
                     Intersection.LineLine(lineA, lineB, out pA, out pB);
-                    resultantPoint = lineA.PointAt(pA);
-                    resultantVector.Unitize();
-                    resultantVector.Reverse();
-                    Line resultantLine = new Line(resultantPoint, resultantVector);
-                    resultantPoint = resultantLine.ClosestPoint(centerPoint, false);
-                    resultantLine = new Line(resultantPoint, resultantVector);
-                    resultantLine.Flip();
-                    double forceLengthForm = Force * ratio;
-                    double extendValue = forceLengthForm - 1.0;
-                    resultantLine.Extend(extendValue, 0);
-                    ResultantForm = resultantLine;
+                    parameterPoint = lineA.PointAt(pA);
+                    if (i < externalForces.Count - 2)
+                    {
+                        lineA = new Line(parameterPoint, globalForceVectors1[i + 1]);
+                    }
+                    else
+                    {
+                        lineA = new Line(parameterPoint, globalForceVectors2[0]);
+                        lineB = new Line(externalForces[0].FormLine.To, globalForceVectors2[1]);
+                        Intersection.LineLine(lineA, lineB, out pA, out pB);
+                        resultantPoint = lineA.PointAt(pA);
+                        resultantVector.Unitize();
+                        resultantVector.Reverse();
+                        Line resultantLine = new Line(resultantPoint, resultantVector);
+                        resultantPoint = resultantLine.ClosestPoint(centerPoint, false);
+                        resultantLine = new Line(resultantPoint, resultantVector);
+                        resultantLine.Flip();
+                        double forceLengthForm = Force * ratio;
+                        double extendValue = forceLengthForm - 1.0;
+                        resultantLine.Extend(extendValue, 0);
+                        ResultantForm = resultantLine;
+                    }
                 }
             }
         }

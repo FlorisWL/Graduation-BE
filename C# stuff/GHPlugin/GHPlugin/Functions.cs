@@ -150,15 +150,15 @@ namespace GHPlugin
 
             for (int i = 0; i < members.Count; i++)
             {
-                if(members[i].Force == 0)
+                if(members[i].Force < 1e-13)
                     thickness = 1e-10;
                 else
                     thickness = members[i].Force * scalingFactorUnified;
                 
                 //thickness = 1;
-                point1 = members[i].MemberLine.From;
-                point2 = members[i].MemberLine.To;
-                normal1 = members[i].MemberLine.Direction;
+                point1 = members[i].FormLine.From;
+                point2 = members[i].FormLine.To;
+                normal1 = members[i].FormLine.Direction;
                 normal1.Unitize();
                 normal1 = normal2 = normal1* (thickness*0.5);
                 normal1.Rotate(0.5 * Math.PI, zPostive);
@@ -168,12 +168,12 @@ namespace GHPlugin
                 point2 = Point3d.Add(point2, normal2);
 
                 Plane planeXY = new Plane(new Point3d(0, 0, 0), new Vector3d(0, 0, 1));
-                angle = Vector3d.VectorAngle(new Vector3d(1, 0, 0), members[i].MemberLine.Direction, planeXY);
+                angle = Vector3d.VectorAngle(new Vector3d(1, 0, 0), members[i].FormLine.Direction, planeXY);
                 planeXY.Rotate(angle, new Vector3d(0, 0, 1));
 
                 rectangle = new Rectangle3d(planeXY, point1, point2);
                 PolylineCurve curveRectangle = rectangle.ToPolyline().ToPolylineCurve();
-                breps.Add(Brep.CreatePlanarBreps(curveRectangle, 1e-11)[0]);
+                breps.Add(Brep.CreatePlanarBreps(curveRectangle,1e-14)[0]);
             }
 
             oBreps = breps;

@@ -13,12 +13,12 @@ namespace GHPlugin
         public int JointIndex;
         public int GlobalJointIndex;
         public Point3d Joint;
-        public Vector3d Direction;
         public Line FormLine;
         public Line FormLineForAngle;
         public Line ForceLine;
         public Line ForceLineJoint;
         public Line ForceLineForAngle;
+        public Vector3d Direction;
         public double Force = 0.0;
         public Boolean PositiveForce = true;
         public Boolean Known = false;
@@ -73,7 +73,7 @@ namespace GHPlugin
             for (int i = 0; i < halfMembers.Count; i++)
             {
                 if (halfMembers[i].JointIndex == GlobalJointIndex)
-                    m0m1.Add(halfMembers[i].HalfMemberLine.Direction);
+                    m0m1.Add(halfMembers[i].FormLine.Direction);
             }
 
             for (int i = 0; i < m0m1.Count; i++)
@@ -113,7 +113,7 @@ namespace GHPlugin
             for(int i = 0; i < halfMembers.Count; i++)
             {
                 if (halfMembers[i].JointIndex == GlobalJointIndex)
-                    m0m1.Add(halfMembers[i].HalfMemberLine.Direction);
+                    m0m1.Add(halfMembers[i].FormLine.Direction);
             }
 
             Vector3d m0 = m0m1[0];

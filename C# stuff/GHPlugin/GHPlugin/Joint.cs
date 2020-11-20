@@ -11,10 +11,10 @@ namespace GHPlugin
     {
         public Point3d JointLocation;
         public int PointIndex;
-        public List<int> MemberIndices = new List<int>();
-        public List<int> HalfMemberIndices = new List<int>();
         public List<int> ExternalForceIndices = new List<int>();
         public List<int> SupportReactionIndices = new List<int>();
+        public List<int> MemberIndices = new List<int>();
+        public List<int> HalfMemberIndices = new List<int>();
         public Boolean JointSolved = false;
         public Boolean Relocated = false;
         public Point3d InitSolveLocation = new Point3d(0,-10,0);
@@ -81,14 +81,14 @@ namespace GHPlugin
                     for (int j = 0; j < HalfMemberIndices.Count; j++)
                         if (i != j)
                         {
-                            tempAngle = Vector3d.VectorAngle(iHalfMembers[HalfMemberIndices[i]].HalfMemberLine.Direction, iHalfMembers[HalfMemberIndices[j]].HalfMemberLine.Direction, planeXY);
+                            tempAngle = Vector3d.VectorAngle(iHalfMembers[HalfMemberIndices[i]].FormLine.Direction, iHalfMembers[HalfMemberIndices[j]].FormLine.Direction, planeXY);
                             if (tempAngle < minAngle) minAngle = tempAngle;
                         }
                     anglesBetweenMembers.Add(minAngle);
                 }
                 double _1 = anglesBetweenMembers.Max();
                 int indexMaxAngle = anglesBetweenMembers.IndexOf(_1);
-                Line newLine = iHalfMembers[HalfMemberIndices[indexMaxAngle]].HalfMemberLine;
+                Line newLine = iHalfMembers[HalfMemberIndices[indexMaxAngle]].FormLine;
                 Transform rotationTransformation = Transform.Rotation(_1 * -0.25, newLine.To);
                 newLine.Transform(rotationTransformation);
 

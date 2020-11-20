@@ -28,7 +28,7 @@ namespace GHPlugin
         {
             pManager.AddLineParameter("Members Form", "Members Form", "The lines of the members in the form diagram!", GH_ParamAccess.list);
             pManager.AddNumberParameter("Force Magnitudes", "Force Magnitude", "The magnitude of forces in all members, supports and external forces, in that order!", GH_ParamAccess.list);
-            pManager.AddColourParameter("Colour Members", "Colour Members", "The colours of all the members: blue for compression, red for tension!", GH_ParamAccess.list);
+            pManager.AddColourParameter("Color Members", "Color Members", "The colors of all the members: blue for compression, red for tension!", GH_ParamAccess.list);
 
             pManager.AddCurveParameter("Free Areas", "Free Areas", "Curves depicting areas that are supposed to stay free of structural elements!", GH_ParamAccess.list);
             pManager.AddNumberParameter("Penalty Factor Compression", "Penalty Compression", "A penalty factor for all members in compression. A higher penalty should result in a favourability of tensile structures!", GH_ParamAccess.item, 1.0);
@@ -79,61 +79,69 @@ namespace GHPlugin
             bool MaxCompressionLengthExceeded = false;
             bool FreeAreasBreached = false;
 
-            int i = 0;
-            foreach (Line element in iMembersForm)
+            if (iForceMagnitudes.Count < 1)
             {
-                memberLengths.Add(iMembersForm[i].Length);
-                memberForces.Add(iForceMagnitudes[i]);
-                memberLengthsXForces.Add(memberLengths[i] * memberForces[i]);
-                i++;
+                oFitnessManipulated = 1e9;
+                oFitnessPure = 0;
             }
-
-            oFitnessPure = memberLengthsXForces.Sum();
-
-            i = 0;
-            foreach (Color element in iMemberColors)
+            else
             {
-                if (iMemberColors[i].R > 0.5)
-                    memberLengthsXForcesWeighted.Add(memberLengthsXForces[i] * iPenaltyTension);
-                else
+                int i = 0;
+                foreach (Line element in iMembersForm)
                 {
-                    memberLengthsXForcesWeighted.Add(memberLengthsXForces[i] * iPenaltyCompression);
-                    if (iMaxLengthCompression > 0)
-                        if (memberLengths[i] > iMaxLengthCompression)
-                            MaxCompressionLengthExceeded = true;
+                    memberLengths.Add(iMembersForm[i].Length);
+                    memberForces.Add(iForceMagnitudes[i]);
+                    memberLengthsXForces.Add(memberLengths[i] * memberForces[i]);
+                    i++;
                 }
-                i++;
-            }
 
-            double tol = 1e-9;
-            Transform scaleTransform;
-            Point3d centerPoint;
-            if(iFreeAreas.Count != 0)
-            {
-                for (int j = 0; j < iFreeAreas.Count; j++)
+                oFitnessPure = memberLengthsXForces.Sum();
+
+                i = 0;
+                foreach (Color element in iMemberColors)
                 {
-                    centerPoint = AreaMassProperties.Compute(iFreeAreas[j]).Centroid;
-                    scaleTransform = Transform.Scale(centerPoint, 0.9999);
-                    iFreeAreas[j].Transform(scaleTransform);
-                    for (i = 0; i < iMembersForm.Count; i++)
+                    if (iMemberColors[i].R > 0.5)
+                        memberLengthsXForcesWeighted.Add(memberLengthsXForces[i] * iPenaltyTension);
+                    else
                     {
-                        Curve curve = iMembersForm[i].ToNurbsCurve();
-                        bool curveCollision = Curve.PlanarCurveCollision(iFreeAreas[j], curve, new Plane(new Point3d(0, 0, 0), new Vector3d(0, 0, -1)), tol);
-                        if (curveCollision)
+                        memberLengthsXForcesWeighted.Add(memberLengthsXForces[i] * iPenaltyCompression);
+                        if (iMaxLengthCompression > 0)
+                            if (memberLengths[i] > iMaxLengthCompression)
+                                MaxCompressionLengthExceeded = true;
+                    }
+                    i++;
+                }
+
+                double tol = 1e-9;
+                Transform scaleTransform;
+                Point3d centerPoint;
+                if (iFreeAreas.Count != 0)
+                {
+                    for (int j = 0; j < iFreeAreas.Count; j++)
+                    {
+                        centerPoint = AreaMassProperties.Compute(iFreeAreas[j]).Centroid;
+                        scaleTransform = Transform.Scale(centerPoint, 0.9999);
+                        iFreeAreas[j].Transform(scaleTransform);
+                        for (i = 0; i < iMembersForm.Count; i++)
                         {
-                            FreeAreasBreached = true;
-                            goto End;
+                            Curve curve = iMembersForm[i].ToNurbsCurve();
+                            bool curveCollision = Curve.PlanarCurveCollision(iFreeAreas[j], curve, new Plane(new Point3d(0, 0, 0), new Vector3d(0, 0, -1)), tol);
+                            if (curveCollision)
+                            {
+                                FreeAreasBreached = true;
+                                goto End;
+                            }
                         }
                     }
                 }
-            }
 
             End:
 
-            oFitnessManipulated = memberLengthsXForcesWeighted.Sum();
+                oFitnessManipulated = memberLengthsXForcesWeighted.Sum();
 
-            if ((FreeAreasBreached) || (MaxCompressionLengthExceeded))
-                oFitnessManipulated *= 1e6;
+                if ((FreeAreasBreached) || (MaxCompressionLengthExceeded))
+                    oFitnessManipulated *= 1e6;
+            }
 
 
             DA.SetData(0, oFitnessManipulated);

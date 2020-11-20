@@ -26,19 +26,19 @@ namespace GHPlugin
             pManager.AddNumberParameter("Scaling Factor", "Scaling Factor", "A scaling factor for the force diagram [Force/Length]!", GH_ParamAccess.item);
 
             pManager.AddPointParameter("Joints", "Joints", "All nodes of the structure!", GH_ParamAccess.list);
-            pManager.AddIntegerParameter("Member start indices", "Members start", "The joint indices of the start points of the members!", GH_ParamAccess.list);
-            pManager.AddIntegerParameter("Member end indices", "Members end", "The joint indices of the end points of the members!", GH_ParamAccess.list);
+            pManager.AddIntegerParameter("Member Start Indices", "Members Start", "The joint indices of the start points of the members!", GH_ParamAccess.list);
+            pManager.AddIntegerParameter("Member End Indices", "Members End", "The joint indices of the end points of the members!", GH_ParamAccess.list);
 
-            pManager.AddIntegerParameter("Force: Index", "Force: Index", "The indices in the Joints list where an external force should be applied!",GH_ParamAccess.list);
+            pManager.AddIntegerParameter("Force: Indices", "Force: Indices", "The indices in the Joints list where an external force should be applied!",GH_ParamAccess.list);
             pManager.AddNumberParameter("Force: Magnitude", "Force: Magnitude", "The magnitude of the external forces!", GH_ParamAccess.list);
             pManager.AddNumberParameter("Force: Rotation", "Force: Rotation", "The rotation in degrees of the external forces!",GH_ParamAccess.list,0);
 
-            pManager.AddIntegerParameter("Support: Index", "Support: Index", "The indices in the Joints list where a support must be placed!", GH_ParamAccess.list);
+            pManager.AddIntegerParameter("Support: Indices", "Support: Indices", "The indices in the Joints list where a support must be placed!", GH_ParamAccess.list);
             pManager.AddBooleanParameter("Support: Horizontal Constraint", "Support: Horizontal", "Place a horizontal support at the given node!",GH_ParamAccess.list);
             pManager.AddBooleanParameter("Support: Vertical Constraint", "Support: Vertical", "Place a vertical support at the given node!",GH_ParamAccess.list);
             pManager.AddNumberParameter("Support: Rotation", "Support: Rotation", "The rotation in degrees of the base of the support!",GH_ParamAccess.list,0);
 
-            pManager.AddIntegerParameter("Display option", "Display option", "Choose the display options: 0 = Design as a whole, 1 = Global form diagram, 2 = Global unified diagram!", GH_ParamAccess.item, 0);
+            pManager.AddIntegerParameter("Display Option", "Display Option", "Choose the display options: 0 = Design as a whole, 1 = Global form diagram, 2 = Global unified diagram!", GH_ParamAccess.item, 0);
             pManager.AddBooleanParameter("Display Force Diagram", "Display Force Diagram", "Display the global force diagram!", GH_ParamAccess.item, true);
             pManager.AddBooleanParameter("Display Numerical Values", "Display Numerical Values", "Display the numerical values of the vectors in the form diagram!", GH_ParamAccess.item, false);
         }
@@ -55,11 +55,11 @@ namespace GHPlugin
             pManager.AddLineParameter("Resultant Force", "Resultant Force", "The line of the resultant force in the force diagram!", GH_ParamAccess.item);
             pManager.AddLineParameter("Virtual Members Force", "Virt. Members Force", "The lines of the (virtual) members in the global force diagram!", GH_ParamAccess.list);
 
-            pManager.AddBrepParameter("Members unified diagram", "Members unified diagram", "Member geometry to display for the unified diagram", GH_ParamAccess.list);
-            pManager.AddColourParameter("Colour Global Members", "Colour Global Members", "The colours of global members: blue for compression, red for tension!", GH_ParamAccess.list);
+            pManager.AddBrepParameter("Members Unified Diagram", "Members Unified Diagram", "Member geometry to display for the unified diagram", GH_ParamAccess.list);
+            pManager.AddColourParameter("Color Members", "Color Members", "The colors of global members: blue for compression, red for tension!", GH_ParamAccess.list);
 
             pManager.AddNumberParameter("Force Magnitudes Supports", "Force Magnitude Supports", "The magnitude of the support reactions!", GH_ParamAccess.list);
-            pManager.AddPlaneParameter("Locations text tag", "Locations text tag", "Locations as planes for the numerical force value 3D text tags", GH_ParamAccess.list);
+            pManager.AddPlaneParameter("Locations Text Tags", "Locations Text Tags", "Locations as planes for the numerical force value 3D text tags", GH_ParamAccess.list);
         }
 
         protected override void SolveInstance(IGH_DataAccess DA)
@@ -147,6 +147,16 @@ namespace GHPlugin
             allMaxIndices.Add(iMemberEndIndices.Max());
             allMaxIndices.Add(iForceIndices.Max());
             allMaxIndices.Add(iSupportIndices.Max());
+
+            List<Line> memberLinesForm = new List<Line>();
+            List<Member> allMembers = new List<Member>();
+            for (int i = 0; i < iMemberStartIndices.Count; i++)
+            {
+                allMembers.Add(new Member(iMemberStartIndices[i], iMemberEndIndices[i], iJoints));
+                memberLinesForm.Add(allMembers[i].FormLine);
+                oMemberColors.Add(Color.FromName("Black"));
+            }
+            oMemberLinesForm = memberLinesForm;
 
             bool noErrors = true;
 
@@ -247,14 +257,14 @@ namespace GHPlugin
 
                 if(noErrors)
                 {
-
+                    oMemberLinesForm = new List<Line>();
                     GlobalDiagram myGlobalDiagram = new GlobalDiagram(myResultant, mySupportReactions);
                     List<Member> myVirtMembers = myGlobalDiagram.Members();
-                    List<HalfMember> myHalfMembers = myGlobalDiagram.HalfMembersForm;
+                    List<HalfMember> myHalfMembers = myGlobalDiagram.GlobalHalfMembers;
                     myResultant.ResultantForAngle(myGlobalDiagram);
 
                     for (int i = 0; i < myVirtMembers.Count; i++)
-                        oMemberLinesForm.Add(myVirtMembers[i].MemberLine);
+                        oMemberLinesForm.Add(myVirtMembers[i].FormLine);
 
                     for (int i = 0; i < mySupportReactions.Count; i++)
                         mySupportReactions[i].SupportLineForAngle(myHalfMembers);
@@ -296,18 +306,6 @@ namespace GHPlugin
                     formLinesForTextTag.Add(oResultantLineForm);
                     oForceMagnitudes.Add(Math.Round(myResultant.Force * iScalingFactor));
                     functions.DisplayNumericalValues(formLinesForTextTag, out oLocationsForceTextTags);
-
-
-
-                    List<Line> memberLinesForm = new List<Line>();
-                    List<Member> allMembers = new List<Member>();
-
-                    for (int i = 0; i < iMemberStartIndices.Count; i++)
-                    {
-                        allMembers.Add(new Member(iMemberStartIndices[i], iMemberEndIndices[i], iJoints));
-                        memberLinesForm.Add(allMembers[i].MemberLine);
-                        oMemberColors.Add(Color.FromName("Black"));
-                    }
 
                     if (iDisplayOption == 0)
                     {

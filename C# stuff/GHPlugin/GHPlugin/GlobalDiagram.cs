@@ -12,11 +12,11 @@ namespace GHPlugin
     {
         public Resultant ForceResultant;
         public List<SupportReaction> AllSupportReactions;
+        public List<HalfMember> GlobalHalfMembers = new List<HalfMember>();
+        public List<Point3d> GlobalJoints = new List<Point3d>();
         public List<Line> MemberLinesForm = new List<Line>();
         public List<Line> MemberLinesForce = new List<Line>();
-        public List<HalfMember> HalfMembersForm = new List<HalfMember>();
-        public List<Point3d> GlobalJoints = new List<Point3d>();
-        public Point3d dummyPoint = new Point3d(0,0,0);
+        public Point3d StartPoint = new Point3d(0,0,0);
 
         public GlobalDiagram(Resultant forceResultant, List<SupportReaction> allSupportReactions)
         {
@@ -62,19 +62,17 @@ namespace GHPlugin
             for (int i = 0; i < startIntegers.Count; i++)
             {
                 globalMembers.Add(new Member(startIntegers[i], endIntegers[i], GlobalJoints));
-                MemberLinesForm.Add(globalMembers[i].MemberLine);
+                MemberLinesForm.Add(globalMembers[i].FormLine);
             }
 
             for (int i = 0; i < globalMembers.Count; i++)
             {
-                HalfMembersForm.Add(new HalfMember(i, globalMembers[i], true, GlobalJoints));
-                HalfMembersForm.Add(new HalfMember(i, globalMembers[i], false, GlobalJoints));
+                GlobalHalfMembers.Add(new HalfMember(i, globalMembers[i], true, GlobalJoints));
+                GlobalHalfMembers.Add(new HalfMember(i, globalMembers[i], false, GlobalJoints));
             }
 
             return globalMembers;
         }
-
-        
 
         public void SolveForceDiagram(List<Member> globalMembers)
         {
@@ -115,34 +113,34 @@ namespace GHPlugin
                 Line knownForceLineForAngle;
                 Line forceLineTemp;
 
-                for (int j = 0; j < HalfMembersForm.Count; j++)
-                    if (i == HalfMembersForm[j].JointIndex)
+                for (int j = 0; j < GlobalHalfMembers.Count; j++)
+                    if (i == GlobalHalfMembers[j].JointIndex)
                     {
-                        if (globalMembers[HalfMembersForm[j].MemberIndex].Known == false)
+                        if (globalMembers[GlobalHalfMembers[j].MemberIndex].Known == false)
                         {
                             unknowns += 1;
                             halfMemberIndices.Add(unknownForceLines.Count);
                             correspondingHalfMemberIndices.Add(j);
-                            unknownForceLines.Add(HalfMembersForm[j].HalfMemberLine);
-                            unknownForceLinesForAngle.Add(HalfMembersForm[j].HalfMemberLine);
+                            unknownForceLines.Add(GlobalHalfMembers[j].FormLine);
+                            unknownForceLinesForAngle.Add(GlobalHalfMembers[j].FormLine);
                         }
                         else
                         {
                             knowns += 1;
-                            forceLineTemp = globalMembers[HalfMembersForm[j].MemberIndex].ForceLine;
+                            forceLineTemp = globalMembers[GlobalHalfMembers[j].MemberIndex].ForceLine;
 
-                            if (Vector3d.Multiply(forceLineTemp.Direction, HalfMembersForm[j].HalfMemberLine.Direction) > 0.0)
+                            if (Vector3d.Multiply(forceLineTemp.Direction, GlobalHalfMembers[j].FormLine.Direction) > 0.0)
                             {
-                                if (globalMembers[HalfMembersForm[j].MemberIndex].PositiveForce == true)
+                                if (globalMembers[GlobalHalfMembers[j].MemberIndex].PositiveForce == true)
                                     forceLineTemp.Flip();
                             }
                             else
                             {
-                                if (globalMembers[HalfMembersForm[j].MemberIndex].PositiveForce == false)
+                                if (globalMembers[GlobalHalfMembers[j].MemberIndex].PositiveForce == false)
                                     forceLineTemp.Flip();
                             }
                             knownForceLines.Add(forceLineTemp);
-                            knownForceLinesForAngles.Add(HalfMembersForm[j].HalfMemberLine);
+                            knownForceLinesForAngles.Add(GlobalHalfMembers[j].FormLine);
                         }
                     }
 
@@ -176,8 +174,7 @@ namespace GHPlugin
                 {
                     if (knowns > 1)
                     {
-                        //startpoint (here dummypoint) for ResultantSimple gets overruled if knownForceLines.Count == 2, which should be the case here.
-                        ResultantSimple myResultantSimple = new ResultantSimple(dummyPoint, knownForceLines, knownForceLinesForAngles);
+                        ResultantSimple myResultantSimple = new ResultantSimple(StartPoint, knownForceLines, knownForceLinesForAngles);
                         knownForceLine = myResultantSimple.ResultantLine;
                         
                     }
@@ -192,10 +189,10 @@ namespace GHPlugin
                     {
                         for (int j = 0; j < halfMemberIndices.Count; j++)
                         {
-                            globalMembers[HalfMembersForm[correspondingHalfMemberIndices[j]].MemberIndex].ForceLine = unknownForceLines[halfMemberIndices[j]];
-                            globalMembers[HalfMembersForm[correspondingHalfMemberIndices[j]].MemberIndex].Force = unknownForceLines[halfMemberIndices[j]].Length;
-                            globalMembers[HalfMembersForm[correspondingHalfMemberIndices[j]].MemberIndex].PositiveForce = myPostiveForces[halfMemberIndices[j]];
-                            globalMembers[HalfMembersForm[correspondingHalfMemberIndices[j]].MemberIndex].Known = true;
+                            globalMembers[GlobalHalfMembers[correspondingHalfMemberIndices[j]].MemberIndex].ForceLine = unknownForceLines[halfMemberIndices[j]];
+                            globalMembers[GlobalHalfMembers[correspondingHalfMemberIndices[j]].MemberIndex].Force = unknownForceLines[halfMemberIndices[j]].Length;
+                            globalMembers[GlobalHalfMembers[correspondingHalfMemberIndices[j]].MemberIndex].PositiveForce = myPostiveForces[halfMemberIndices[j]];
+                            globalMembers[GlobalHalfMembers[correspondingHalfMemberIndices[j]].MemberIndex].Known = true;
                             MemberLinesForce.Add(unknownForceLines[halfMemberIndices[j]]);
                         }
 

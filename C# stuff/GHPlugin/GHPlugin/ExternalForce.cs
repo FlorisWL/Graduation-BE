@@ -11,13 +11,13 @@ namespace GHPlugin
     public class ExternalForce
     {
         public int JointIndex;
-        public Vector3d Direction;
-        public Vector3d ForceVector;
-        public double Force = 0.0;
         public Line FormLine;
-        public Line ForceLineForAngle;
         public Line ForceLine;
         public Line ForceLineJoint;
+        public Line ForceLineForAngle;
+        public Vector3d ForceVector;
+        public Vector3d Direction;
+        public double Force = 0.0;
 
 
 
