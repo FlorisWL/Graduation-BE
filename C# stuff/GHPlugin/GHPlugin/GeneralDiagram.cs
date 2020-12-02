@@ -89,22 +89,22 @@ namespace GHPlugin
                 }
             }
 
-            for (int i = 0; i < joint.ExternalForceIndices.Count; i++)
+            for (int i = 0; i < joint.SupportReactionIndices.Count; i++) 
             {
-                indexSupports.Add(joint.ExternalForceIndices[i]);
+                indexSupports.Add(joint.SupportReactionIndices[i]);
                 indexSupportsCorresponding.Add(knownForceLines.Count);
-                knownForceLines.Add(AllExternalForces[joint.ExternalForceIndices[i]].ForceLine);
-                knownForceLinesForAngles.Add(AllExternalForces[joint.ExternalForceIndices[i]].ForceLineForAngle);
-                distribution[2]++;
-            }
-
-            for (int i = 0; i < joint.SupportReactionIndices.Count; i++)
-            {
-                indexExtForces.Add(joint.SupportReactionIndices[i]);
-                indexExtForcesCorresponding.Add(knownForceLines.Count);
                 knownForceLines.Add(AllSupportReactions[joint.SupportReactionIndices[i]].ForceLine);
                 knownForceLinesForAngles.Add(AllSupportReactions[joint.SupportReactionIndices[i]].ForceLineForAngle);
                 distribution[1]++;
+            }
+
+            for (int i = 0; i < joint.ExternalForceIndices.Count; i++)
+            {
+                indexExtForces.Add(joint.ExternalForceIndices[i]);
+                indexExtForcesCorresponding.Add(knownForceLines.Count);
+                knownForceLines.Add(AllExternalForces[joint.ExternalForceIndices[i]].ForceLine);
+                knownForceLinesForAngles.Add(AllExternalForces[joint.ExternalForceIndices[i]].ForceLineForAngle);
+                distribution[2]++;
             }
 
             oIndices = new List<int>();
