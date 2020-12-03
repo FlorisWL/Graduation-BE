@@ -33,7 +33,7 @@ namespace GHPlugin
             pManager.AddCurveParameter("Free Areas", "Free Areas", "Curves depicting areas that are supposed to stay free of structural elements!", GH_ParamAccess.list);
             pManager.AddNumberParameter("Penalty Factor Compression", "Penalty Compression", "A penalty factor for all members in compression. A higher penalty should result in a favourability of tensile structures!", GH_ParamAccess.item, 1.0);
             pManager.AddNumberParameter("Penalty Factor Tension", "Penalty Tension", "A penalty factor for all members in tension. A higher penalty should result in a favourability of compressive structures!", GH_ParamAccess.item, 1.0);
-            pManager.AddNumberParameter("Max Length Compression Element", "Max Length Compression", "A value that sets the max length for any compressive element, any design containing compressive elements with longer lengths are disregarded!", GH_ParamAccess.item, 0.0);
+            pManager.AddNumberParameter("Min Length Buckling", "Min Length Buckling", "Set the member length from where buckling will be considered, compression members with longer lengths will be valued with a quadratic factor! (Buckling is not considered if value is negative, which is the default setting)", GH_ParamAccess.item, -1.0);
 
             pManager[3].Optional = true;
         }
@@ -59,7 +59,7 @@ namespace GHPlugin
             List<Curve> iFreeAreas = new List<Curve>();
             double iPenaltyCompression = 1.0;
             double iPenaltyTension = 1.0;
-            double iMaxLengthCompression = 0.0;
+            double iMinLengthBuckling = -1.0;
 
             double oFitnessManipulated;
             double oFitnessPure; ;
@@ -70,7 +70,7 @@ namespace GHPlugin
             DA.GetDataList(3,iFreeAreas);
             DA.GetData(4,ref iPenaltyCompression);
             DA.GetData(5,ref iPenaltyTension);
-            DA.GetData(6,ref iMaxLengthCompression);
+            DA.GetData(6,ref iMinLengthBuckling);
 
             List<double> memberLengths = new List<double>();
             List<double> memberForces = new List<double>();
@@ -105,9 +105,11 @@ namespace GHPlugin
                     else
                     {
                         memberLengthsXForcesWeighted.Add(memberLengthsXForces[i] * iPenaltyCompression);
-                        if (iMaxLengthCompression > 0)
-                            if (memberLengths[i] > iMaxLengthCompression)
-                                MaxCompressionLengthExceeded = true;
+                        if (iMinLengthBuckling >= 0)
+                            if (memberLengths[i] > iMinLengthBuckling)
+                            {
+                                memberLengthsXForcesWeighted[i] *= ((iMembersForm[i].Length * iMembersForm[i].Length) / (iMinLengthBuckling * iMinLengthBuckling));
+                            }
                     }
                     i++;
                 }
