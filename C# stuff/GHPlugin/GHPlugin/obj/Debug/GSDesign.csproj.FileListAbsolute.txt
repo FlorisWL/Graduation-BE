@@ -1,0 +1,8 @@
+C:\Users\flori\git\Graduation-BE\C# stuff\GHPlugin\GHPlugin\bin\GHPlugin.dll
+C:\Users\flori\git\Graduation-BE\C# stuff\GHPlugin\GHPlugin\bin\GHPlugin.pdb
+C:\Users\flori\git\Graduation-BE\C# stuff\GHPlugin\GHPlugin\obj\Debug\GSDesign.csprojAssemblyReference.cache
+C:\Users\flori\git\Graduation-BE\C# stuff\GHPlugin\GHPlugin\obj\Debug\GHPlugin.Properties.Resources.resources
+C:\Users\flori\git\Graduation-BE\C# stuff\GHPlugin\GHPlugin\obj\Debug\GSDesign.csproj.GenerateResource.cache
+C:\Users\flori\git\Graduation-BE\C# stuff\GHPlugin\GHPlugin\obj\Debug\GSDesign.csproj.CoreCompileInputs.cache
+C:\Users\flori\git\Graduation-BE\C# stuff\GHPlugin\GHPlugin\obj\Debug\GHPlugin.dll
+C:\Users\flori\git\Graduation-BE\C# stuff\GHPlugin\GHPlugin\obj\Debug\GHPlugin.pdb
